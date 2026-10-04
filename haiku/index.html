@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sababa Burrito - Breakfast Burritos on Rothschild, Tel Aviv</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-orange: #FF6B35;
+            --secondary-teal: #004E89;
+            --accent-coral: #F7931E;
+            --light-cream: #FFF8F3;
+            --dark-bg: #0F1419;
+            --text-dark: #1A1A1A;
+            --text-light: #666666;
+            --border-light: #E8E8E8;
+            --success-green: #2ECC71;
+            --warm-yellow: #FFD166;
+            --white: #FFFFFF;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.12);
+            --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.16);
+            --radius: 12px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--text-dark);
+            background: var(--white);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Smooth scroll behavior */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Typography */
+        h1, h2, h3, h4 {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            letter-spacing: -1px;
+        }
+
+        h2 {
+            font-size: 2.2rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-dark);
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            color: var(--text-dark);
+        }
+
+        p {
+            font-size: 1rem;
+            color: var(--text-light);
+            margin-bottom: 1rem;
+        }
+
+        a {
+            color: var(--primary-orange);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        a:hover {
+            color: var(--secondary-teal);
+        }
+
+        /* Header / Navigation */
+        header {
+            background: var(--white);
+            border-bottom: 1px solid var(--border-light);
+            padding: 1.2rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            background-color: rgba(255, 255, 255, 0.95);
+        }
+
+        nav {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary-orange), var(--accent-coral));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+            align-items: center;
+        }
+
+        .nav-links a {
+            font-weight: 500;
+            font-size: 0.95rem;
+            color: var(--text-dark);
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-orange);
+        }
+
+        .hebrew-accent {
+            font-family: 'Rubik', sans-serif;
+            font-weight: 600;
+            color: var(--primary-orange);
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, var(--secondary-teal) 0%, var(--primary-orange) 100%);
+            color: var(--white);
+            padding: 6rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: slideUp 0.8s ease-out;
+        }
+
+        .hero-tagline {
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+            opacity: 0.95;
+            font-weight: 500;
+        }
+
+        .hero-hebrew {
+            font-family: 'Rubik', sans-serif;
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+
+        .hero-subtitle {
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: var(--white);
+            color: var(--primary-orange);
+            padding: 1rem 2.5rem;
+            border-radius: var(--radius);
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-md);
+            border: none;
+            animation: fadeIn 1s ease-out 0.3s both;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* Sections */
+        section {
+            padding: 5rem 0;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+            padding-bottom: 1.5rem;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-orange), var(--accent-coral));
+            border-radius: 2px;
+        }
+
+        /* About Section */
+        .about {
+            background: var(--light-cream);
+        }
+
+        .about-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .about-text h2 {
+            color: var(--secondary-teal);
+            margin-bottom: 1.5rem;
+        }
+
+        .about-text p {
+            margin-bottom: 1.2rem;
+            font-size: 1.05rem;
+            line-height: 1.8;
+        }
+
+        .about-highlight {
+            color: var(--primary-orange);
+            font-weight: 600;
+        }
+
+        .about-illustration {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 5rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        /* Menu Section */
+        .menu {
+            background: var(--white);
+        }
+
+        .menu-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2.5rem;
+        }
+
+        .menu-category {
+            background: var(--light-cream);
+            padding: 2rem;
+            border-radius: var(--radius);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .menu-category:hover {
+            border-color: var(--primary-orange);
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .category-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.5rem;
+            color: var(--secondary-teal);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .menu-item {
+            margin-bottom: 1.8rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .menu-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 0.5rem;
+        }
+
+        .item-name {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: 1.05rem;
+        }
+
+        .item-price {
+            color: var(--primary-orange);
+            font-weight: 700;
+            font-size: 1.1rem;
+            white-space: nowrap;
+            margin-left: 1rem;
+        }
+
+        .item-desc {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-bottom: 0.5rem;
+            line-height: 1.5;
+        }
+
+        .item-tags {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+
+        .tag {
+            display: inline-block;
+            font-size: 0.75rem;
+            padding: 0.3rem 0.7rem;
+            border-radius: 20px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .tag-vegan {
+            background: rgba(46, 204, 113, 0.15);
+            color: #27AE60;
+        }
+
+        .tag-veg {
+            background: rgba(46, 204, 113, 0.1);
+            color: #27AE60;
+        }
+
+        .tag-spicy {
+            background: rgba(255, 107, 53, 0.15);
+            color: var(--primary-orange);
+        }
+
+        /* How to Order Section */
+        .ordering {
+            background: linear-gradient(135deg, var(--secondary-teal) 0%, rgba(0, 78, 137, 0.8) 100%);
+            color: var(--white);
+        }
+
+        .ordering h2 {
+            color: var(--white);
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .ordering-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .order-option {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: var(--radius);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .order-option:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-5px);
+        }
+
+        .order-option-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .order-option h3 {
+            color: var(--white);
+            margin-bottom: 0.8rem;
+        }
+
+        .order-option p {
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 0.95rem;
+        }
+
+        .hours-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: var(--radius);
+            text-align: center;
+            border: 2px solid var(--warm-yellow);
+        }
+
+        .hours-info h3 {
+            color: var(--warm-yellow);
+            margin-bottom: 1rem;
+        }
+
+        .hours-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .hours-day {
+            text-align: center;
+        }
+
+        .hours-day-name {
+            color: var(--warm-yellow);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .hours-day-time {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+        }
+
+        /* Location Section */
+        .location {
+            background: var(--light-cream);
+        }
+
+        .location-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .location-info h2 {
+            color: var(--secondary-teal);
+            margin-bottom: 1.5rem;
+        }
+
+        .location-address {
+            background: var(--white);
+            padding: 2rem;
+            border-radius: var(--radius);
+            border-left: 4px solid var(--primary-orange);
+            margin-bottom: 1.5rem;
+        }
+
+        .location-address p {
+            font-size: 1.1rem;
+            color: var(--text-dark);
+            margin: 0;
+        }
+
+        .street-name {
+            font-family: 'Rubik', sans-serif;
+            font-size: 1.3rem;
+            color: var(--primary-orange);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .map-illustration {
+            background: linear-gradient(135deg, var(--secondary-teal) 0%, var(--primary-orange) 100%);
+            border-radius: var(--radius);
+            padding: 3rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
+            color: var(--white);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .map-illustration::before {
+            content: '';
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            top: -50px;
+            right: -50px;
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        .map-illustration::after {
+            content: '📍';
+            position: absolute;
+            font-size: 4rem;
+            opacity: 0.3;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        .map-text {
+            position: relative;
+            z-index: 1;
+        }
+
+        .map-text h3 {
+            color: var(--white);
+            margin-bottom: 0.5rem;
+            font-size: 1.3rem;
+        }
+
+        .map-text p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.95rem;
+        }
+
+        /* Gallery Section */
+        .gallery {
+            background: var(--white);
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .gallery-item {
+            aspect-ratio: 1;
+            border-radius: var(--radius);
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, var(--primary-orange), var(--accent-coral));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .gallery-item:hover {
+            transform: scale(1.05);
+            box-shadow: var(--shadow-md);
+        }
+
+        .gallery-item.alt1 {
+            background: linear-gradient(135deg, var(--warm-yellow), var(--primary-orange));
+        }
+
+        .gallery-item.alt2 {
+            background: linear-gradient(135deg, var(--secondary-teal), var(--primary-orange));
+        }
+
+        .gallery-item.alt3 {
+            background: linear-gradient(135deg, var(--accent-coral), var(--warm-yellow));
+        }
+
+        /* Footer */
+        footer {
+            background: var(--text-dark);
+            color: var(--white);
+            padding: 4rem 2rem 2rem;
+            text-align: center;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .footer-logo {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary-orange), var(--accent-coral));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+
+        .footer-socials {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            margin: 2rem 0;
+            font-size: 1.5rem;
+        }
+
+        .social-icon {
+            display: inline-block;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: rgba(255, 107, 53, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .social-icon:hover {
+            background: var(--primary-orange);
+            transform: translateY(-5px);
+        }
+
+        .footer-text {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.9rem;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .footer-hebrew {
+            font-family: 'Rubik', sans-serif;
+            color: var(--primary-orange);
+            margin: 1rem 0;
+            font-weight: 600;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            h2 {
+                font-size: 1.8rem;
+            }
+
+            .hero {
+                padding: 4rem 1.5rem;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .nav-links {
+                gap: 1rem;
+                font-size: 0.85rem;
+            }
+
+            .about-content,
+            .location-content {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            .about-illustration {
+                order: -1;
+            }
+
+            .menu-container {
+                grid-template-columns: 1fr;
+            }
+
+            section {
+                padding: 3rem 0;
+            }
+
+            .gallery-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+
+            .ordering-options {
+                grid-template-columns: 1fr;
+            }
+
+            .hours-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            h2 {
+                font-size: 1.4rem;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .hero-tagline {
+                font-size: 1.05rem;
+            }
+
+            .nav-links {
+                gap: 0.8rem;
+                font-size: 0.8rem;
+            }
+
+            .logo {
+                font-size: 1.4rem;
+            }
+
+            .cta-button {
+                padding: 0.8rem 1.8rem;
+                font-size: 0.9rem;
+            }
+
+            .menu-category {
+                padding: 1.5rem;
+            }
+
+            .container {
+                padding: 0 1.5rem;
+            }
+
+            .map-illustration {
+                min-height: 250px;
+                padding: 2rem;
+            }
+        }
+
+        /* Accessibility */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header / Navigation -->
+    <header>
+        <nav>
+            <div class="logo">Sababa</div>
+            <ul class="nav-links">
+                <li><a href="#menu">Menu</a></li>
+                <li><a href="#location">Location</a></li>
+                <li><a href="#order">Order</a></li>
+                <li><a href="#gallery">Gallery</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Sababa Burrito</h1>
+            <div class="hero-tagline">Breakfast Done Right</div>
+            <div class="hero-hebrew" lang="he" dir="rtl">בוקר טוב, תל אביב! 🌅</div>
+            <p class="hero-subtitle">Massive, fresh breakfast burritos on Rothschild Boulevard. Open early, stay late.</p>
+            <button class="cta-button" onclick="document.getElementById('menu').scrollIntoView();">Explore Menu</button>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="about">
+        <div class="container">
+            <div class="section-title">
+                <h2>Our Story</h2>
+            </div>
+            <div class="about-content">
+                <div class="about-text">
+                    <h3 style="color: var(--primary-orange); margin-bottom: 1.5rem;">Born from the Rothschild Vibes</h3>
+                    <p>
+                        We noticed something missing on Rothschild: a place that takes breakfast seriously. No rushed decisions. No disappointing eggs. Just <span class="about-highlight">massive, carefully-built burritos</span> loaded with real ingredients, made fresh to order while you wait.
+                    </p>
+                    <p>
+                        We pull inspiration from Tel Aviv's street food culture—bold flavors, fresh takes on classics, a touch of Middle Eastern soul. Whether you're stumbling in at 2 AM after a night out or grabbing breakfast before the beach, we've got the burrito that fits your morning.
+                    </p>
+                    <p>
+                        <strong style="color: var(--secondary-teal);">Sababa</strong> <span style="color: var(--text-light);">(סבבה) is Hebrew for "cool" or "great"—and that's exactly what we're trying to bring to breakfast.</span>
+                    </p>
+                </div>
+                <div class="about-illustration">🌯</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Menu Section -->
+    <section class="menu" id="menu">
+        <div class="container">
+            <div class="section-title">
+                <h2>The Menu</h2>
+                <p style="text-align: center; margin-top: 0.5rem;">Fresh, bold, built to order.</p>
+            </div>
+
+            <div class="menu-container">
+                <!-- Signature Burritos -->
+                <div class="menu-category">
+                    <div class="category-title">🔥 Signature Wraps</div>
+
+                    <div class="menu-item">
+                        <div class="item-header">
+                            <div class="item-name">The Tel Aviv Dream</div>
+                            <div class="item-price">₪54</div>
+                        </div>
+                        <div class="item-desc">Scrambled eggs, crispy potatoes, melted kashkaval, caramelized onions, cilantro, and our house hot sauce. The gateway burrito.</div>
+                        <div class="item-tags">
+                            <span class="tag tag-veg">Vegetarian</span>
+                        </div>
+                    </div>
+
+                    <div class="menu-item">
+                        <div class="item-header">
+                            <div class="item-name">The Carnivore</div>
+                            <div class="item-price">₪68</div>
+                        </div>
+                        <div class="item-desc">Fluffy eggs, crispy pastrami-style beef, hash browns, double cheese, jalapeños, black garlic aioli, and sriracha. Meat lovers' paradise.</div>
+                        <div class="item-tags">
+                            <span class="tag tag-spicy">Spicy</span>
+                        </div>
+                    </div>
+
+                    <div class="menu-item">
+                        <div class="item-header">
+                            <div class="item-name">Chorizo Fire</div>
+                            <div class="item-price">₪62</div>
+                        </div>
+                        <div class="item-desc">Scrambled eggs, spiced chorizo sausage, crispy potatoes, cheese, pico de gallo, cilantro, and chipotle mayo.</div>
+                        <div class="item-tags">
+                            <span class="tag tag-spicy">Spicy</span>
+                        </div>
+                    </div>
+
+                    <div class="menu-item">
+                        <div class="item-header">
+                            <div class="item-name">The Sabich Twist</div>
+                            <div class="item-price">₪48</div>
+                        </div>
+                        <div class="item-desc">Fried eggplant, soft scrambled eggs, crispy potatoes, tahini drizzle, tomato, cucumber, and our herb harissa. A Tel Aviv classic reimagined.</div>
+                        <div class="item-tags">
+                            <span class="tag tag-vegan">Vegan (hold egg)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Plant-Based & Lighter -->
+                <div class="menu-category">
+                    <div class="category-title">🌱 Plant Power</div>
+
+                    <div class="menu-item">
+                        <div class="item-header">
+                            <div class="item-name">Sunrise Vegan</div>
+                            <div class="item-price">₪52</div>
+                        </div>
+                        <div class="item-desc">Crispy potatoes, sautéed mushrooms, roasted red peppers, vegan cheese, avocado, cilantro, and tahini-lime crema. Hearty and delicious.</div>
+                        <div class="item-tags">
+                            <span class="tag tag-vegan">Vegan</span>
+                        </div>
+                    </div>
+
+                    <div class="menu-item">
+                        <div class="item-header">
+                            <div class="item-name">Tofu Scramble Soul</div>
+                            <div class="item-price">₪50</div>
+                        </div>
+                        <div class="item-desc">Turmeric tofu scramble, crispy hash browns, caramelized onions, kale, nutritional yeast, cilantro, and herb oil.</div>
+                        <div class="item-tags">
+                            <span class="tag tag-vegan">Vegan</span>
+                        </div>
+                    </div>
+
+                    <div class="menu-item">
+                        <div class="item-header">
+                            <div class="item-name">Shakshuka Wrap</div>
+                            <div class="item-price">₪55</div>
+                        </div>
+                        <div class="item-desc">Baked eggs in spiced tomato sauce, crispy potatoes, fresh herbs, crumbled feta, and cilantro. Comfort in a wrap.</div>
+                        <div class="item-tags">
+                            <span class="tag tag-veg">Vegetarian</span>
+                        </div>
+                    </div>
+
+                    <div class="menu-item">
+                        <div class="item-header">
+                            <div class="item-name">Chicken Herb Garden</div>
+                            <div class="item-price">₪58</div>
+                        </div>
+                        <div class="item-desc">Grilled chicken, scrambled eggs, fresh greens, roasted tomatoes, feta, cilantro, and lemon-herb dressing. Light but satisfying.</div>
+                    </div>
+                </div>
+
+                <!-- Sides & Drinks -->
+                <div class="menu-category">
+                    <div class="category-title">☕ Sides & Sips</div>
+
+                    <div class="menu-item">
+                        <div class="item-header">
+                            <div class="item-name">Extra Hash Browns / Tots</div>
+                            <div class="item-price">₪12 / ₪14</div>
+                        </div>
+                        <div class="item-desc">Crispy and golden. The perfect companion to any burrito.</div>
+                    </div>
+
+                    <div class="menu-item">
+                        <div class="item-header">
+                            <div class="item-name">Chips & House Salsa</div>
+                            <div class="item-price">₪10</div>
+                        </div>
+                        <div class="item-desc">Fresh tortilla chips with roasted tomato and jalapeño salsa.</div>
+                    </div>
+
+                    <div class="menu-item">
+                        <div class="item-header">
+                            <div class="item-name">Espresso / Flat White</div>
+                            <div class="item-price">₪8 / ₪10</div>
+                        </div>
+                    </div>
+
+                    <div class="menu-item">
+                        <div class="item-header">
+                            <div class="item-name">Cold Brew / Iced Coffee</div>
+                            <div class="item-price">₪10</div>
+                        </div>
+                    </div>
+
+                    <div class="menu-item">
+                        <div class="item-header">
+                            <div class="item-name">Fresh OJ / Lemonade</div>
+                            <div class="item-price">₪12</div>
+                        </div>
+                    </div>
+
+                    <div class="menu-item">
+                        <div class="item-header">
+                            <div class="item-name">Add-Ons: Avocado, Extra Cheese, Jalapeños, Egg</div>
+                            <div class="item-price">₪4 each</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How to Order Section -->
+    <section class="ordering" id="order">
+        <div class="container">
+            <h2>How to Order</h2>
+            <div class="ordering-options">
+                <div class="order-option">
+                    <div class="order-option-icon">📱</div>
+                    <h3>Wolt & Deliveroo</h3>
+                    <p>Order delivery straight to your door. Fast and reliable.</p>
+                </div>
+                <div class="order-option">
+                    <div class="order-option-icon">🚶</div>
+                    <h3>Walk In</h3>
+                    <p>Stop by Rothschild. We're open early and late, ready to wrap it up.</p>
+                </div>
+                <div class="order-option">
+                    <div class="order-option-icon">📞</div>
+                    <h3>Phone Order</h3>
+                    <p>Call ahead for quick pickup. No wait, just fresh burritos.</p>
+                </div>
+            </div>
+
+            <div class="hours-info">
+                <h3>Hours & Info</h3>
+                <div class="hours-grid">
+                    <div class="hours-day">
+                        <div class="hours-day-name">Mon–Thu</div>
+                        <div class="hours-day-time">6 AM – 11 PM</div>
+                    </div>
+                    <div class="hours-day">
+                        <div class="hours-day-name">Fri</div>
+                        <div class="hours-day-time">6 AM – 2 AM</div>
+                    </div>
+                    <div class="hours-day">
+                        <div class="hours-day-name">Sat</div>
+                        <div class="hours-day-time">8 AM – 3 AM</div>
+                    </div>
+                    <div class="hours-day">
+                        <div class="hours-day-name">Sun</div>
+                        <div class="hours-day-time">8 AM – 11 PM</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Location Section -->
+    <section class="location" id="location">
+        <div class="container">
+            <div class="section-title">
+                <h2>Find Us</h2>
+            </div>
+            <div class="location-content">
+                <div class="location-info">
+                    <h3 style="color: var(--primary-orange); margin-bottom: 1.5rem;">Right in the Heart of Rothschild</h3>
+                    <div class="location-address">
+                        <div class="street-name" lang="he" dir="rtl">שדרות רוטשילד</div>
+                        <p>📍 Rothschild Boulevard<br>Tel Aviv, Israel</p>
+                    </div>
+                    <p style="color: var(--text-dark); font-weight: 500;">
+                        Located on the vibrant Rothschild Boulevard—the heart of Tel Aviv's food and nightlife scene. Easy to find, even easier to love.
+                    </p>
+                    <p style="color: var(--text-light);">
+                        Perfect for pre-beach meals, late-night runs, office lunch breaks, or that perfect morning-after burrito. We're here for it all.
+                    </p>
+                </div>
+                <div class="map-illustration">
+                    <div class="map-text">
+                        <h3>Rothschild Boulevard</h3>
+                        <p>The pulse of Tel Aviv</p>
+                        <p style="margin-top: 1rem; font-size: 4rem; opacity: 1;">🗺️</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Gallery / Social Section -->
+    <section class="gallery" id="gallery">
+        <div class="container">
+            <div class="section-title">
+                <h2>Follow Our Flavor</h2>
+                <p style="text-align: center; margin-top: 0.5rem;">@SababaBurritoTLV on Instagram</p>
+            </div>
+            <div class="gallery-grid">
+                <div class="gallery-item">🌯</div>
+                <div class="gallery-item alt1">🥒</div>
+                <div class="gallery-item alt2">🥬</div>
+                <div class="gallery-item alt3">🧅</div>
+                <div class="gallery-item">🧀</div>
+                <div class="gallery-item alt1">🍅</div>
+                <div class="gallery-item alt2">🌶️</div>
+                <div class="gallery-item alt3">☕</div>
+                <div class="gallery-item">✨</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-logo">Sababa Burrito</div>
+            <p style="color: rgba(255, 255, 255, 0.7); margin-bottom: 0;">Breakfast Burritos on Rothschild Boulevard, Tel Aviv</p>
+
+            <div class="footer-socials">
+                <div class="social-icon">📱</div>
+                <div class="social-icon">📍</div>
+                <div class="social-icon">📸</div>
+            </div>
+
+            <div class="footer-hebrew" lang="he" dir="rtl">
+                בואו לאכול, לחיות, ולהנות! 🎉
+            </div>
+
+            <div class="footer-text">
+                <p>© 2026 Sababa Burrito. Made with <span style="color: var(--primary-orange);">❤️</span> on Rothschild Boulevard.</p>
+                <p style="margin-top: 0.5rem; font-size: 0.85rem;">Open early. Staying late. Always fresh.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Smooth scroll for buttons
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+
+        // Add subtle animation on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.menu-category, .order-option, .gallery-item').forEach(el => {
+            el.style.opacity = '0.9';
+            el.style.transform = 'translateY(10px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>
