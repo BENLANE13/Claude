@@ -1,0 +1,702 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yolk &amp; Yalla — Breakfast Burritos on Rothschild</title>
+<meta name="description" content="Yolk & Yalla: big breakfast burritos, crispy potatoes and cold brew on Rothschild Boulevard, Tel Aviv. Open from 6:00 to late.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&family=Secular+One&family=Suez+One&display=swap" rel="stylesheet">
+<style>
+:root{
+  --yolk:#FFC21A; --yolk-d:#F2A900;
+  --tomato:#E8432B; --tomato-d:#C22F1A;
+  --ink:#1E1A17; --ink-2:#3a332d;
+  --cream:#FFF6E3; --paper:#FFFBF2;
+  --teal:#0F7C76; --teal-l:#BFE8E1;
+  --green:#2F8A3E; --muted:#6b6057;
+  --radius:22px;
+  --shadow:0 10px 0 var(--ink);
+  --display:'Secular One','Rubik',system-ui,sans-serif;
+  --body:'Rubik',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:76px}
+body{font-family:var(--body);background:var(--cream);color:var(--ink);line-height:1.55;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+img,svg{max-width:100%;display:block}
+a{color:inherit}
+.he{font-family:'Rubik',sans-serif}
+.wrap{width:min(1180px,100% - 32px);margin-inline:auto}
+h1,h2,h3{font-family:var(--display);font-weight:400;line-height:1.02;letter-spacing:.01em}
+.eyebrow{display:inline-flex;gap:.6rem;align-items:center;font-weight:600;font-size:.82rem;letter-spacing:.14em;text-transform:uppercase;color:var(--tomato-d)}
+.eyebrow .he{letter-spacing:0;font-size:1rem;text-transform:none;color:var(--teal);font-weight:600}
+.eyebrow::before{content:"";width:28px;height:3px;background:currentColor;border-radius:3px}
+.btn{display:inline-flex;align-items:center;gap:.5rem;font:600 1rem var(--body);padding:.9rem 1.5rem;border-radius:999px;border:3px solid var(--ink);background:var(--yolk);color:var(--ink);text-decoration:none;box-shadow:0 5px 0 var(--ink);transition:transform .15s,box-shadow .15s,background .2s;cursor:pointer}
+.btn:hover{transform:translateY(-3px);box-shadow:0 8px 0 var(--ink)}
+.btn:active{transform:translateY(3px);box-shadow:0 2px 0 var(--ink)}
+.btn.red{background:var(--tomato);color:#fff}
+.btn.ghost{background:var(--paper)}
+:focus-visible{outline:3px solid var(--teal);outline-offset:3px}
+
+/* NAV */
+header{position:sticky;top:0;z-index:50;background:rgba(255,246,227,.92);backdrop-filter:blur(8px);border-bottom:3px solid var(--ink)}
+.nav{display:flex;align-items:center;justify-content:space-between;height:68px}
+.logo{display:flex;align-items:center;gap:.6rem;text-decoration:none;font-family:var(--display);font-size:1.45rem}
+.logo svg{width:38px;height:38px}
+.logo span em{font-style:normal;color:var(--tomato)}
+nav ul{display:flex;gap:1.6rem;list-style:none;align-items:center}
+nav a{text-decoration:none;font-weight:500;position:relative}
+nav ul a:not(.btn)::after{content:"";position:absolute;left:0;bottom:-4px;height:3px;width:0;background:var(--tomato);transition:width .25s}
+nav ul a:not(.btn):hover::after{width:100%}
+nav .btn{padding:.5rem 1.1rem;font-size:.92rem;box-shadow:0 3px 0 var(--ink)}
+.burger{display:none;background:none;border:3px solid var(--ink);border-radius:12px;width:46px;height:42px;cursor:pointer;position:relative}
+.burger span,.burger span::before,.burger span::after{position:absolute;left:9px;width:22px;height:3px;background:var(--ink);border-radius:2px;content:"";transition:.25s}
+.burger span{top:16px}.burger span::before{left:0;top:-7px}.burger span::after{left:0;top:7px}
+.burger[aria-expanded=true] span{background:transparent}
+.burger[aria-expanded=true] span::before{top:0;transform:rotate(45deg)}
+.burger[aria-expanded=true] span::after{top:0;transform:rotate(-45deg)}
+@media(max-width:820px){
+  .burger{display:block}
+  nav ul{position:absolute;top:68px;left:0;right:0;background:var(--cream);flex-direction:column;padding:1.2rem 16px 1.6rem;gap:1rem;border-bottom:3px solid var(--ink);transform-origin:top;transform:scaleY(0);opacity:0;pointer-events:none;transition:.25s}
+  nav ul.open{transform:scaleY(1);opacity:1;pointer-events:auto}
+  nav ul a{font-size:1.2rem}
+}
+
+/* HERO */
+.hero{position:relative;background:var(--yolk);border-bottom:3px solid var(--ink);overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;background:
+  radial-gradient(circle at 78% 45%,rgba(255,255,255,.55) 0 18%,transparent 19%),
+  repeating-conic-gradient(from 0deg at 78% 45%,rgba(255,255,255,.18) 0 6deg,transparent 6deg 12deg);
+  animation:spin 80s linear infinite;transform-origin:78% 45%}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hero .wrap{position:relative;display:grid;grid-template-columns:1.05fr .95fr;gap:2rem;align-items:center;padding:4.5rem 0 5.5rem}
+.hello{font-size:clamp(1.6rem,3.2vw,2.3rem);color:var(--tomato-d);font-weight:700;margin-bottom:.4rem;display:block}
+.hero h1{font-size:clamp(3rem,8.2vw,6.6rem);text-transform:uppercase;text-shadow:4px 4px 0 rgba(255,255,255,.55)}
+.hero h1 .amp{color:var(--tomato);display:inline-block;transform:rotate(-8deg)}
+.hero p.lead{font-size:clamp(1.05rem,2vw,1.3rem);max-width:30em;margin:1.4rem 0 2rem;font-weight:500}
+.hero .cta{display:flex;flex-wrap:wrap;gap:1rem}
+.badges{display:flex;gap:.7rem;flex-wrap:wrap;margin-top:2rem}
+.badge{background:var(--ink);color:var(--yolk);padding:.35rem .9rem;border-radius:999px;font-size:.85rem;font-weight:600}
+.hero-art{position:relative;aspect-ratio:1;max-width:560px;margin-left:auto;width:100%}
+.hero-art svg.burrito{width:100%;height:100%;animation:float 5s ease-in-out infinite;filter:drop-shadow(0 18px 0 rgba(30,26,23,.18))}
+@keyframes float{50%{transform:translateY(-14px) rotate(-2deg)}}
+.sticker{position:absolute;display:grid;place-items:center;text-align:center;border-radius:50%;border:3px solid var(--ink);font-family:var(--display);line-height:1.05;box-shadow:0 5px 0 var(--ink)}
+.sticker.s1{right:2%;top:2%;width:116px;height:116px;background:var(--tomato);color:#fff;font-size:1.05rem;transform:rotate(12deg);animation:wob 4s ease-in-out infinite}
+.sticker.s1 b{font-size:1.9rem;display:block}
+.sticker.s2{left:0;bottom:8%;width:104px;height:104px;background:var(--teal);color:#fff;font-size:1rem;transform:rotate(-10deg);animation:wob 5s ease-in-out infinite reverse}
+@keyframes wob{50%{transform:rotate(-4deg) scale(1.05)}}
+.steam{position:absolute;stroke:#fff;fill:none;stroke-width:6;stroke-linecap:round;opacity:.0;animation:steam 3.5s ease-in infinite}
+.steam:nth-of-type(2){animation-delay:1.1s}.steam:nth-of-type(3){animation-delay:2.1s}
+@keyframes steam{0%{opacity:0;transform:translateY(10px)}40%{opacity:.8}100%{opacity:0;transform:translateY(-30px)}}
+@media(max-width:820px){
+  .hero .wrap{grid-template-columns:1fr;padding:2.5rem 0 4rem}
+  .hero-art{margin:0 auto;max-width:400px;order:-1}
+  .sticker.s1{width:92px;height:92px;font-size:.9rem}.sticker.s1 b{font-size:1.5rem}
+  .sticker.s2{width:84px;height:84px;font-size:.85rem}
+}
+
+/* MARQUEE */
+.marquee{background:var(--ink);color:var(--yolk);border-bottom:3px solid var(--ink);overflow:hidden;white-space:nowrap;padding:.9rem 0;font-family:var(--display);font-size:1.4rem}
+.marquee div{display:inline-block;animation:marq 38s linear infinite}
+.marquee span{margin:0 1.4rem}.marquee i{color:var(--tomato);font-style:normal}
+@keyframes marq{to{transform:translateX(-50%)}}
+.marquee:hover div{animation-play-state:paused}
+
+section{padding:5.5rem 0;position:relative}
+.sec-head{margin-bottom:3rem}
+.sec-head h2{font-size:clamp(2.4rem,6vw,4.2rem);margin-top:.7rem}
+.sec-head p{max-width:36em;margin-top:1rem;color:var(--ink-2);font-size:1.08rem}
+
+/* ABOUT */
+.about{background:var(--paper)}
+.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center}
+.about h2 .he{display:block;font-size:.55em;color:var(--teal);margin-top:.5rem;font-family:'Secular One'}
+.about p{margin-top:1.1rem;font-size:1.08rem;color:var(--ink-2)}
+.about p strong{color:var(--ink);background:linear-gradient(transparent 60%,var(--yolk) 60%)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:2rem}
+.stat{border:3px solid var(--ink);border-radius:16px;padding:1rem;text-align:center;background:var(--cream)}
+.stat b{font-family:var(--display);font-size:2rem;font-weight:400;display:block;color:var(--tomato)}
+.stat span{font-size:.8rem;font-weight:500;color:var(--muted)}
+.poster{position:relative;border:3px solid var(--ink);border-radius:var(--radius);background:var(--teal);box-shadow:var(--shadow);padding:2.4rem 2rem;color:#fff;transform:rotate(1.6deg);overflow:hidden}
+.poster::after{content:"";position:absolute;right:-60px;bottom:-60px;width:220px;height:220px;border-radius:50%;background:var(--yolk);opacity:.95}
+.poster q{position:relative;z-index:1;font-family:var(--display);font-size:clamp(1.7rem,3.6vw,2.5rem);line-height:1.15;display:block;quotes:none}
+.poster .he{position:relative;z-index:1;display:block;margin-top:1.4rem;font-size:1.3rem;font-weight:600;color:var(--yolk)}
+.poster small{position:relative;z-index:1;display:block;margin-top:1rem;opacity:.9}
+.bauhaus{position:absolute;left:1.5rem;bottom:1.5rem;display:flex;gap:6px;z-index:1}
+.bauhaus i{width:26px;height:26px;background:var(--tomato);border:3px solid var(--ink);display:block}
+.bauhaus i:nth-child(2){border-radius:50%;background:var(--paper)}
+.bauhaus i:nth-child(3){background:var(--ink);clip-path:polygon(50% 0,100% 100%,0 100%);border:none}
+@media(max-width:820px){.about-grid{grid-template-columns:1fr;gap:3rem}.poster{padding-bottom:4.5rem}}
+
+/* MENU */
+.menu{background:var(--cream)}
+.tabs{display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:2.2rem;position:sticky;top:68px;z-index:5;background:var(--cream);padding:.8rem 0;border-bottom:2px dashed rgba(30,26,23,.25)}
+.tab{font:600 .95rem var(--body);padding:.55rem 1.1rem;border-radius:999px;border:2px solid var(--ink);background:var(--paper);cursor:pointer;transition:.18s}
+.tab:hover{background:var(--yolk)}
+.tab[aria-selected=true]{background:var(--ink);color:var(--yolk)}
+.cat{margin-bottom:3.4rem;scroll-margin-top:150px}
+.cat[hidden]{display:none}
+.cat-title{display:flex;align-items:baseline;gap:1rem;flex-wrap:wrap;margin-bottom:1.4rem}
+.cat-title h3{font-size:2.1rem}
+.cat-title .he{color:var(--teal);font-size:1.15rem;font-weight:600}
+.cat-title small{color:var(--muted);width:100%}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:1.4rem}
+.card{position:relative;background:var(--paper);border:3px solid var(--ink);border-radius:var(--radius);padding:1.4rem 1.4rem 1.3rem;box-shadow:0 6px 0 var(--ink);transition:transform .2s,box-shadow .2s;display:flex;flex-direction:column;gap:.5rem}
+.card:hover{transform:translateY(-5px) rotate(-.6deg);box-shadow:0 11px 0 var(--ink)}
+.card .top{display:flex;justify-content:space-between;gap:1rem;align-items:flex-start}
+.card h4{font-family:var(--display);font-weight:400;font-size:1.45rem;line-height:1.1}
+.card .he-sub{display:block;font-size:.95rem;color:var(--teal);font-weight:600;margin-top:.2rem}
+.price{font-family:var(--display);font-size:1.5rem;background:var(--yolk);border:3px solid var(--ink);border-radius:12px;padding:.1rem .6rem;white-space:nowrap;transform:rotate(3deg)}
+.card p{color:var(--ink-2);font-size:.95rem}
+.tags{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:auto;padding-top:.5rem}
+.tag{font-size:.72rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:.2rem .6rem;border-radius:999px;border:2px solid currentColor}
+.tag.v{color:var(--green)}.tag.vg{color:#0b6b2a;background:#d9f2dc}.tag.sp{color:var(--tomato-d)}.tag.pop{background:var(--ink);color:var(--yolk);border-color:var(--ink)}
+.card.feat{background:var(--ink);color:var(--cream)}
+.card.feat p{color:#e9ddc9}.card.feat .he-sub{color:var(--teal-l)}
+.card.feat .tag.sp{color:#ff9d8a}.card.feat .tag.v{color:#8fe19c}
+.ribbon{position:absolute;top:-14px;left:18px;background:var(--tomato);color:#fff;font-size:.75rem;font-weight:700;padding:.25rem .8rem;border-radius:8px;border:3px solid var(--ink);letter-spacing:.06em;text-transform:uppercase}
+.list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:.4rem 3rem;background:var(--paper);border:3px solid var(--ink);border-radius:var(--radius);padding:1.4rem 1.8rem;box-shadow:0 6px 0 var(--ink)}
+.li{display:flex;align-items:baseline;gap:.5rem;padding:.55rem 0}
+.li .n{font-weight:600}
+.li .n small{display:block;font-weight:400;color:var(--muted);font-size:.84rem}
+.li .dots{flex:1;border-bottom:2px dotted rgba(30,26,23,.4);transform:translateY(-4px);min-width:16px}
+.li .p{font-family:var(--display);font-size:1.2rem;color:var(--tomato-d)}
+.li .n .tag{font-size:.6rem;padding:.05rem .4rem;margin-left:.3rem;vertical-align:middle}
+.sauces{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:1rem}
+.sauce{border:3px solid var(--ink);border-radius:18px;padding:1.1rem;background:var(--paper);position:relative;overflow:hidden;transition:transform .2s}
+.sauce:hover{transform:scale(1.03) rotate(1deg)}
+.sauce::before{content:"";position:absolute;right:-20px;top:-20px;width:80px;height:80px;border-radius:50%;background:var(--c)}
+.sauce b{font-family:var(--display);font-weight:400;font-size:1.2rem;position:relative}
+.sauce p{font-size:.88rem;color:var(--ink-2);margin-top:.3rem;position:relative}
+.note{margin-top:1.2rem;color:var(--muted);font-size:.9rem}
+.legend{display:flex;gap:1rem;flex-wrap:wrap;margin-top:1rem;font-size:.85rem;color:var(--muted)}
+
+/* ORDER */
+.order{background:var(--tomato);color:#fff;border-block:3px solid var(--ink);overflow:hidden}
+.order .eyebrow{color:var(--yolk)}.order .eyebrow .he{color:#fff}
+.order .sec-head p{color:#ffe9dc}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:1.4rem;counter-reset:s}
+.step{background:var(--paper);color:var(--ink);border:3px solid var(--ink);border-radius:var(--radius);padding:1.6rem 1.3rem;box-shadow:0 7px 0 var(--ink);counter-increment:s;position:relative;transition:transform .2s}
+.step:hover{transform:translateY(-6px)}
+.step::before{content:counter(s);position:absolute;top:-22px;left:18px;width:44px;height:44px;border-radius:50%;background:var(--yolk);border:3px solid var(--ink);display:grid;place-items:center;font-family:var(--display);font-size:1.4rem}
+.step h3{font-size:1.4rem;margin:.6rem 0 .4rem}
+.step p{font-size:.93rem;color:var(--ink-2)}
+.step .ic{font-size:2rem}
+.deliv{margin-top:3rem;display:grid;grid-template-columns:1.2fr .8fr;gap:1.4rem}
+.panel{border:3px solid var(--ink);border-radius:var(--radius);padding:1.6rem;background:var(--ink);color:var(--cream)}
+.panel h3{color:var(--yolk);font-size:1.7rem;margin-bottom:.6rem}
+.panel p{color:#e9ddc9}
+.panel .pills{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1.2rem}
+.pill{padding:.45rem 1rem;border-radius:999px;background:var(--teal);color:#fff;font-weight:600;font-size:.9rem;border:2px solid #fff}
+.panel.y{background:var(--yolk);color:var(--ink)}.panel.y h3{color:var(--ink)}.panel.y p{color:var(--ink-2)}
+@media(max-width:960px){.steps{grid-template-columns:repeat(2,1fr);gap:2.2rem 1.2rem}.deliv{grid-template-columns:1fr}}
+@media(max-width:520px){.steps{grid-template-columns:1fr}}
+
+/* HOURS + MAP */
+.visit{background:var(--paper)}
+.visit-grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:3rem;align-items:start}
+.open-now{display:inline-flex;align-items:center;gap:.6rem;padding:.55rem 1.1rem;border:3px solid var(--ink);border-radius:999px;font-weight:700;background:var(--cream);margin-bottom:1.4rem}
+.dot{width:14px;height:14px;border-radius:50%;background:var(--muted)}
+.open-now.on .dot{background:#22b04a;animation:pulse 1.6s infinite}
+.open-now.off .dot{background:var(--tomato)}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(34,176,74,.6)}100%{box-shadow:0 0 0 14px rgba(34,176,74,0)}}
+table.hours{width:100%;border-collapse:collapse;font-size:1.05rem}
+.hours td{padding:.75rem .4rem;border-bottom:2px dashed rgba(30,26,23,.3)}
+.hours td:last-child{text-align:right;font-weight:600}
+.hours tr.today{background:var(--yolk);font-weight:700}
+.hours tr.today td{border-color:var(--ink);padding-inline:.8rem}
+.hours .he{color:var(--teal);font-size:.9rem;margin-left:.4rem}
+.addr{margin-top:1.6rem;padding:1.2rem 1.4rem;border:3px solid var(--ink);border-radius:18px;background:var(--cream)}
+.addr b{font-family:var(--display);font-weight:400;font-size:1.4rem;display:block}
+.addr .he{display:block;color:var(--teal);font-weight:600;font-size:1.1rem}
+.map-box{border:3px solid var(--ink);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;background:#f3e6c8;position:relative}
+.map-box svg{width:100%;height:auto}
+.pin{animation:bounce 1.8s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+@keyframes bounce{50%{transform:translateY(-10px)}}
+@media(max-width:860px){.visit-grid{grid-template-columns:1fr}}
+
+/* GALLERY */
+.gallery{background:var(--ink);color:var(--cream)}
+.gallery .eyebrow{color:var(--yolk)}.gallery .eyebrow .he{color:var(--teal-l)}
+.gallery .sec-head p{color:#d9ccb8}
+.handle{display:inline-flex;gap:.6rem;align-items:center;font-weight:700;color:var(--yolk);text-decoration:none;margin-top:1rem;border-bottom:3px solid var(--yolk)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.tile{position:relative;aspect-ratio:1;border-radius:18px;overflow:hidden;border:3px solid var(--cream);cursor:pointer;transition:transform .25s}
+.tile:nth-child(2),.tile:nth-child(7){grid-row:span 2;aspect-ratio:auto}
+.tile:nth-child(3){grid-column:span 2;aspect-ratio:auto}
+.tile:hover{transform:scale(1.03) rotate(-1deg);z-index:2}
+.tile svg{width:100%;height:100%;object-fit:cover}
+.tile .cap{position:absolute;inset:auto 0 0 0;padding:2rem .9rem .8rem;background:linear-gradient(transparent,rgba(0,0,0,.75));color:#fff;font-size:.85rem;font-weight:500;transform:translateY(100%);transition:.25s}
+.tile:hover .cap,.tile:focus-visible .cap{transform:none}
+.tile .cap b{display:block;color:var(--yolk)}
+@media(max-width:820px){.grid{grid-template-columns:repeat(2,1fr);gap:10px}.tile:nth-child(3){grid-column:span 2}.tile:nth-child(2),.tile:nth-child(7){grid-row:span 1;aspect-ratio:1}.tile .cap{transform:none;font-size:.75rem}}
+
+/* FOOTER */
+footer{background:var(--yolk);border-top:3px solid var(--ink);padding:4rem 0 2rem;position:relative;overflow:hidden}
+.foot-big{font-family:var(--display);font-size:clamp(3rem,12vw,9rem);line-height:.9;text-transform:uppercase;color:var(--ink);letter-spacing:-.01em}
+.foot-big .he{display:block;font-size:.34em;color:var(--tomato-d);margin-top:.6rem;text-transform:none}
+.foot-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:2rem;margin-top:3rem;padding-top:2rem;border-top:3px solid var(--ink)}
+.foot-cols h4{font-family:var(--display);font-weight:400;font-size:1.2rem;margin-bottom:.6rem}
+.foot-cols a{display:block;text-decoration:none;padding:.15rem 0;font-weight:500}
+.foot-cols a:hover{text-decoration:underline}
+.copy{margin-top:2.4rem;font-size:.85rem;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+
+.rv{opacity:0;transform:translateY(26px);transition:opacity .7s,transform .7s}
+.rv.in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.rv{opacity:1;transform:none}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="logo" href="#top" aria-label="Yolk and Yalla home">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="#fff" stroke="#1E1A17" stroke-width="3"/><circle cx="20" cy="20" r="9" fill="#FFC21A" stroke="#1E1A17" stroke-width="3"/><circle cx="17" cy="17" r="2.5" fill="#fff"/></svg>
+      <span>Yolk <em>&amp;</em> Yalla</span>
+    </a>
+    <nav aria-label="Main">
+      <button class="burger" aria-expanded="false" aria-controls="navlist" aria-label="Menu"><span></span></button>
+      <ul id="navlist">
+        <li><a href="#story">Story</a></li>
+        <li><a href="#menu">Menu</a></li>
+        <li><a href="#order">Order</a></li>
+        <li><a href="#visit">Hours &amp; Map</a></li>
+        <li><a href="#gallery">Gallery</a></li>
+        <li><a class="btn red" href="#order">Order now</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+<!-- HERO -->
+<div class="hero">
+  <div class="wrap">
+    <div>
+      <span class="hello"><span lang="he" dir="rtl" class="he">בוקר טוב</span> · Good morning, Tel Aviv</span>
+      <h1>Yolk <span class="amp">&amp;</span><br>Yalla</h1>
+      <p class="lead">Fat, foil-wrapped breakfast burritos stuffed with soft eggs, crispy potatoes, melted cheese and salsa made before sunrise. Now open on Rothschild — from first coffee to last call.</p>
+      <div class="cta">
+        <a class="btn red" href="#menu">See the menu &rarr;</a>
+        <a class="btn ghost" href="#visit">Find us on <span lang="he" dir="rtl" class="he">רוטשילד</span></a>
+      </div>
+      <div class="badges"><span class="badge">Open 6:00 – 02:00</span><span class="badge">Veg &amp; vegan friendly</span><span class="badge" lang="he" dir="rtl"> יאללה, ארוחת בוקר</span></div>
+    </div>
+    <div class="hero-art" aria-hidden="true">
+      <svg class="burrito" viewBox="0 0 400 400">
+        <!-- plate shadow -->
+        <ellipse cx="200" cy="330" rx="150" ry="22" fill="#1E1A17" opacity=".18"/>
+        <g transform="rotate(-18 200 200)">
+          <!-- foil end bottom -->
+          <path d="M96 232 L60 262 L96 292 Z" fill="#d7d9dc" stroke="#1E1A17" stroke-width="5" stroke-linejoin="round"/>
+          <rect x="80" y="150" width="250" height="110" rx="55" fill="#E9B76B" stroke="#1E1A17" stroke-width="6"/>
+          <!-- open filling end -->
+          <ellipse cx="320" cy="205" rx="40" ry="55" fill="#FFF3C9" stroke="#1E1A17" stroke-width="6"/>
+          <path d="M305 175 q18 -14 34 6 q14 22 -6 34 q-22 12 -34 -8 q-8 -18 6 -32z" fill="#FFC21A" stroke="#1E1A17" stroke-width="4"/>
+          <circle cx="322" cy="198" r="9" fill="#F2A900"/>
+          <circle cx="302" cy="232" r="9" fill="#E8432B" stroke="#1E1A17" stroke-width="3"/>
+          <circle cx="335" cy="170" r="8" fill="#2F8A3E" stroke="#1E1A17" stroke-width="3"/>
+          <rect x="296" y="214" width="16" height="12" rx="3" fill="#D98A2B" stroke="#1E1A17" stroke-width="3"/>
+          <rect x="326" y="226" width="16" height="12" rx="3" fill="#D98A2B" stroke="#1E1A17" stroke-width="3"/>
+          <!-- foil wrap -->
+          <rect x="70" y="140" width="150" height="130" rx="22" fill="#e9ecee" stroke="#1E1A17" stroke-width="6"/>
+          <path d="M100 150 v110 M130 146 v118 M160 146 v118 M190 148 v114" stroke="#b4b9be" stroke-width="4" stroke-linecap="round"/>
+          <path d="M82 160 q60 -10 128 0" stroke="#fff" stroke-width="5" stroke-linecap="round" fill="none"/>
+          <!-- label -->
+          <rect x="108" y="180" width="82" height="48" rx="8" fill="#E8432B" stroke="#1E1A17" stroke-width="4"/>
+          <text x="149" y="203" text-anchor="middle" font-family="Secular One" font-size="16" fill="#fff">YOLK</text>
+          <text x="149" y="220" text-anchor="middle" font-family="Secular One" font-size="14" fill="#FFC21A">&amp; YALLA</text>
+        </g>
+        <!-- chips -->
+        <g stroke="#1E1A17" stroke-width="4" stroke-linejoin="round">
+          <path d="M40 340 l40 -8 l14 38 l-42 6z" fill="#FFC21A"/>
+          <path d="M310 350 l36 -14 l20 30 l-36 14z" fill="#FFC21A"/>
+          <circle cx="360" cy="300" r="14" fill="#2F8A3E"/>
+        </g>
+      </svg>
+      <svg class="steam" style="left:62%;top:8%;width:40px;height:70px" viewBox="0 0 40 70"><path d="M20 66c-14-16 14-22 0-38s10-20 6-26"/></svg>
+      <svg class="steam" style="left:72%;top:4%;width:40px;height:70px" viewBox="0 0 40 70"><path d="M20 66c-14-16 14-22 0-38s10-20 6-26"/></svg>
+      <svg class="steam" style="left:52%;top:10%;width:40px;height:70px" viewBox="0 0 40 70"><path d="M20 66c-14-16 14-22 0-38s10-20 6-26"/></svg>
+      <div class="sticker s1"><div><b>₪42</b>burritos<br>from</div></div>
+      <div class="sticker s2"><div lang="he" dir="rtl" class="he" style="font-weight:700">חם<br>וטרי</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="marquee" aria-hidden="true"><div>
+  <span>Eggs</span><i>✺</i><span>Crispy potatoes</span><i>✺</i><span>Melted cheese</span><i>✺</i><span lang="he" dir="rtl">בוקר טוב</span><i>✺</i><span>Salsa verde</span><i>✺</i><span>Cold brew</span><i>✺</i><span>Rothschild Blvd</span><i>✺</i><span lang="he" dir="rtl">יאללה</span><i>✺</i>
+  <span>Eggs</span><i>✺</i><span>Crispy potatoes</span><i>✺</i><span>Melted cheese</span><i>✺</i><span lang="he" dir="rtl">בוקר טוב</span><i>✺</i><span>Salsa verde</span><i>✺</i><span>Cold brew</span><i>✺</i><span>Rothschild Blvd</span><i>✺</i><span lang="he" dir="rtl">יאללה</span><i>✺</i>
+</div></div>
+
+<!-- STORY -->
+<section class="about" id="story">
+  <div class="wrap about-grid">
+    <div class="rv">
+      <span class="eyebrow">Our story <span lang="he" dir="rtl" class="he">הסיפור שלנו</span></span>
+      <h2 style="margin-top:.7rem;font-size:clamp(2.4rem,6vw,4.2rem)">Breakfast doesn't<br>have a bedtime.<span lang="he" dir="rtl" class="he">ארוחת בוקר בכל שעה</span></h2>
+      <p>Tel Aviv eats breakfast like it means it: shakshuka at noon, sabich after the beach, a falafel at 3 a.m. We wanted all of that, in one hand, in one foil wrapper.</p>
+      <p>So we set up a tiny kitchen under the ficus trees of Rothschild Boulevard and started rolling. <strong>Eggs scrambled soft to order, potatoes fried until they shatter</strong>, cheese melted on the griddle, and salsas we blend fresh every morning at five.</p>
+      <p>Early-shift bakers, night-shift nurses, DJs on their way home, Bauhaus-loving tourists: if you're hungry between sunrise and 2 a.m., you're our people.</p>
+      <div class="stats">
+        <div class="stat"><b>6:00</b><span>first burrito</span></div>
+        <div class="stat"><b>2:00</b><span>last call</span></div>
+        <div class="stat"><b>7</b><span>salsas, daily</span></div>
+      </div>
+    </div>
+    <div class="poster rv">
+      <q>One hand on the burrito, one on the boulevard.</q>
+      <span lang="he" dir="rtl" class="he">גדול, חם, ויאללה לעבודה.</span>
+      <small>Rothschild Blvd · Tel Aviv · since this week</small>
+      <div class="bauhaus" aria-hidden="true"><i></i><i></i><i></i></div>
+    </div>
+  </div>
+</section>
+
+<!-- MENU -->
+<section class="menu" id="menu">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow">The menu <span lang="he" dir="rtl" class="he">התפריט</span></span>
+      <h2>Big burritos.<br>Short list.</h2>
+      <p>Every burrito is a 30 cm flour tortilla, griddle-sealed and loaded with soft scrambled eggs, crispy potatoes and melted cheese unless noted. Pick a classic, or build your own.</p>
+      <div class="legend"><span><span class="tag v">Veg</span> vegetarian</span><span><span class="tag vg">Vegan</span> no animal products</span><span><span class="tag sp">Spicy</span> has heat</span></div>
+    </div>
+
+    <div class="tabs" role="tablist" aria-label="Menu categories">
+      <button class="tab" role="tab" aria-selected="true" data-f="all">All</button>
+      <button class="tab" role="tab" aria-selected="false" data-f="burritos">Burritos</button>
+      <button class="tab" role="tab" aria-selected="false" data-f="green">Veg &amp; Vegan</button>
+      <button class="tab" role="tab" aria-selected="false" data-f="addons">Add-ons</button>
+      <button class="tab" role="tab" aria-selected="false" data-f="sauces">Salsas</button>
+      <button class="tab" role="tab" aria-selected="false" data-f="sides">Sides</button>
+      <button class="tab" role="tab" aria-selected="false" data-f="drinks">Drinks</button>
+    </div>
+
+    <div class="cat rv" data-c="burritos">
+      <div class="cat-title"><h3>Meat Burritos</h3><span lang="he" dir="rtl" class="he">בוריטו בשרי</span><small>Eggs · crispy potatoes · cheddar &amp; mozzarella blend</small></div>
+      <div class="cards">
+        <article class="card feat"><span class="ribbon">House favourite</span>
+          <div class="top"><h4>The Boulevard<span lang="he" dir="rtl" class="he-sub">הבולוואר</span></h4><span class="price">₪58</span></div>
+          <p>Hand-sliced beef pastrami, soft eggs, crispy potatoes, melted cheddar, pickled red onion and our smoky chipotle-tahini drizzle.</p>
+          <div class="tags"><span class="tag pop">Most ordered</span><span class="tag sp">Mild heat</span></div></article>
+        <article class="card">
+          <div class="top"><h4>Dizengoff Down<span lang="he" dir="rtl" class="he-sub">דיזנגוף דאון</span></h4><span class="price">₪54</span></div>
+          <p>Crisp beef "bacon" strips, scrambled eggs, hash brown crunch, mozzarella, tomato-pepper salsa and a squeeze of lime.</p>
+          <div class="tags"></div></article>
+        <article class="card">
+          <div class="top"><h4>Chorizo Chai-Chai<span lang="he" dir="rtl" class="he-sub">צ'וריסו חי-חי</span></h4><span class="price">₪56</span></div>
+          <p>Spiced chorizo-style lamb sausage, eggs, crispy potatoes, jalapeño, pepper jack and roasted red salsa.</p>
+          <div class="tags"><span class="tag sp">Spicy</span></div></article>
+        <article class="card">
+          <div class="top"><h4>Bird &amp; Bean<span lang="he" dir="rtl" class="he-sub">עוף ושעועית</span></h4><span class="price">₪52</span></div>
+          <p>Grilled lemon-garlic chicken, black beans, eggs, crispy potatoes, melted cheese and creamy salsa verde.</p>
+          <div class="tags"></div></article>
+        <article class="card">
+          <div class="top"><h4>Shuk Smash<span lang="he" dir="rtl" class="he-sub">שוק סמאש</span></h4><span class="price">₪62</span></div>
+          <p>Smashed beef patty, American-style cheese, eggs, hash browns, pickles and tangy yolk-mustard sauce.</p>
+          <div class="tags"></div></article>
+        <article class="card">
+          <div class="top"><h4>The Full Yalla<span lang="he" dir="rtl" class="he-sub">הפול יאללה</span></h4><span class="price">₪68</span></div>
+          <p>Everything: pastrami, chorizo, double eggs, crispy potatoes, two cheeses, beans, salsa roja. Bring a friend, or a nap plan.</p>
+          <div class="tags"><span class="tag pop">XL</span><span class="tag sp">Mild heat</span></div></article>
+      </div>
+    </div>
+
+    <div class="cat rv" data-c="green">
+      <div class="cat-title"><h3>Veg &amp; Vegan Burritos</h3><span lang="he" dir="rtl" class="he">צמחוני וטבעוני</span><small>Same size. Same crunch. Zero compromise.</small></div>
+      <div class="cards">
+        <article class="card">
+          <div class="top"><h4>Shakshuka-ish<span lang="he" dir="rtl" class="he-sub">שקשוקה-ish</span></h4><span class="price">₪48</span></div>
+          <p>Eggs gently simmered in spiced tomato and pepper sauce, crispy potatoes, feta, fresh herbs. Dip-worthy tortilla, we promise.</p>
+          <div class="tags"><span class="tag v">Veg</span><span class="tag sp">Spicy</span></div></article>
+        <article class="card">
+          <div class="top"><h4>Sabich Sunrise<span lang="he" dir="rtl" class="he-sub">סביח זריחה</span></h4><span class="price">₪50</span></div>
+          <p>Fried eggplant, hard-boiled egg, crispy potatoes, tahini, amba, Israeli salad and zhug, Iraqi-Israeli classic meets burrito.</p>
+          <div class="tags"><span class="tag v">Veg</span><span class="tag pop">Chef's pick</span></div></article>
+        <article class="card">
+          <div class="top"><h4>Tofu Tov<span lang="he" dir="rtl" class="he-sub">טופו טוב</span></h4><span class="price">₪48</span></div>
+          <p>Turmeric tofu scramble with kala namak, crispy potatoes, black beans, avocado crema, pickled onion and salsa verde.</p>
+          <div class="tags"><span class="tag vg">Vegan</span></div></article>
+        <article class="card">
+          <div class="top"><h4>Green Machine<span lang="he" dir="rtl" class="he-sub">מכונה ירוקה</span></h4><span class="price">₪44</span></div>
+          <p>Eggs, spinach, zucchini, hash browns, mozzarella, and a big spoon of herby salsa verde.</p>
+          <div class="tags"><span class="tag v">Veg</span></div></article>
+        <article class="card">
+          <div class="top"><h4>Plain Jane Cheese<span lang="he" dir="rtl" class="he-sub">גבינה פשוטה</span></h4><span class="price">₪42</span></div>
+          <p>The simple one. Eggs, crispy potatoes, a heroic amount of melted cheese. Add salsa to taste.</p>
+          <div class="tags"><span class="tag v">Veg</span></div></article>
+        <article class="card">
+          <div class="top"><h4>Hummus Hash<span lang="he" dir="rtl" class="he-sub">חומוס האש</span></h4><span class="price">₪46</span></div>
+          <p>Smoky roasted chickpeas, smashed potatoes, warm hummus, cashew cheese, pickles and chili oil. No eggs, no dairy.</p>
+          <div class="tags"><span class="tag vg">Vegan</span><span class="tag sp">Spicy</span></div></article>
+      </div>
+    </div>
+
+    <div class="cat rv" data-c="addons">
+      <div class="cat-title"><h3>Add-ons</h3><span lang="he" dir="rtl" class="he">תוספות</span></div>
+      <div class="list">
+        <div class="li"><span class="n">Avocado</span><span class="dots"></span><span class="p">₪8</span></div>
+        <div class="li"><span class="n">Extra cheese</span><span class="dots"></span><span class="p">₪6</span></div>
+        <div class="li"><span class="n">Extra egg</span><span class="dots"></span><span class="p">₪5</span></div>
+        <div class="li"><span class="n">Jalapeños <span class="tag sp">Spicy</span></span><span class="dots"></span><span class="p">₪3</span></div>
+        <div class="li"><span class="n">Extra protein<small>pastrami, chorizo, chicken or tofu</small></span><span class="dots"></span><span class="p">₪12</span></div>
+        <div class="li"><span class="n">Crispy hash brown inside</span><span class="dots"></span><span class="p">₪6</span></div>
+        <div class="li"><span class="n">Vegan cheese swap</span><span class="dots"></span><span class="p">₪4</span></div>
+        <div class="li"><span class="n">Make it a bowl<small>no tortilla, all the good stuff</small></span><span class="dots"></span><span class="p">₪0</span></div>
+      </div>
+    </div>
+
+    <div class="cat rv" data-c="sauces">
+      <div class="cat-title"><h3>House Salsas &amp; Sauces</h3><span lang="he" dir="rtl" class="he">רטבים</span><small>Made fresh daily · free on the side, ₪3 for a jar to go</small></div>
+      <div class="sauces">
+        <div class="sauce" style="--c:#8fd08a"><b>Salsa Verde</b><p>Tomatillo, coriander, lime. Bright and tangy. <span class="tag vg">Vegan</span></p></div>
+        <div class="sauce" style="--c:#f08a76"><b>Salsa Roja</b><p>Fire-roasted tomato, garlic, smoky chili. <span class="tag vg">Vegan</span> <span class="tag sp">Spicy</span></p></div>
+        <div class="sauce" style="--c:#ffc21a"><b>Zhug Zing</b><p>Yemenite green chili paste with a cheeky kick. <span class="tag vg">Vegan</span> <span class="tag sp">Hot</span></p></div>
+        <div class="sauce" style="--c:#e9c58a"><b>Chipotle Tahini</b><p>Smoky, nutty, creamy. Our signature drizzle. <span class="tag vg">Vegan</span></p></div>
+        <div class="sauce" style="--c:#c9e6a5"><b>Avocado Crema</b><p>Lime, yogurt, ripe avocado. <span class="tag v">Veg</span></p></div>
+        <div class="sauce" style="--c:#ffb36b"><b>Amba Mango</b><p>Tangy pickled mango, a sabich love letter. <span class="tag vg">Vegan</span></p></div>
+      </div>
+    </div>
+
+    <div class="cat rv" data-c="sides">
+      <div class="cat-title"><h3>Sides</h3><span lang="he" dir="rtl" class="he">תוספות לצד</span></div>
+      <div class="list">
+        <div class="li"><span class="n">Crispy hash browns<small>two golden triangles</small></span><span class="dots"></span><span class="p">₪16</span></div>
+        <div class="li"><span class="n">Tater tots<small>with chipotle ketchup</small></span><span class="dots"></span><span class="p">₪18</span></div>
+        <div class="li"><span class="n">Chips &amp; salsa<small>fried tortilla, roja or verde</small></span><span class="dots"></span><span class="p">₪22</span></div>
+        <div class="li"><span class="n">Chips &amp; guac</span><span class="dots"></span><span class="p">₪28</span></div>
+        <div class="li"><span class="n">Loaded tots<small>cheese, jalapeño, crema</small></span><span class="dots"></span><span class="p">₪28</span></div>
+        <div class="li"><span class="n">Pickle plate<small>seasonal Shuk pickles</small></span><span class="dots"></span><span class="p">₪14</span></div>
+      </div>
+    </div>
+
+    <div class="cat rv" data-c="drinks">
+      <div class="cat-title"><h3>Drinks</h3><span lang="he" dir="rtl" class="he">שתייה</span><small>Oat, soy &amp; almond milk at no extra charge</small></div>
+      <div class="list">
+        <div class="li"><span class="n">Espresso</span><span class="dots"></span><span class="p">₪9</span></div>
+        <div class="li"><span class="n">Flat white</span><span class="dots"></span><span class="p">₪16</span></div>
+        <div class="li"><span class="n">Cappuccino</span><span class="dots"></span><span class="p">₪15</span></div>
+        <div class="li"><span class="n">Iced coffee</span><span class="dots"></span><span class="p">₪18</span></div>
+        <div class="li"><span class="n">Cold brew<small>steeped 18 hours</small></span><span class="dots"></span><span class="p">₪20</span></div>
+        <div class="li"><span class="n">Fresh orange juice</span><span class="dots"></span><span class="p">₪20</span></div>
+        <div class="li"><span class="n">Mint lemonade<small>limonana, naturally</small></span><span class="dots"></span><span class="p">₪18</span></div>
+        <div class="li"><span class="n">Hibiscus iced tea</span><span class="dots"></span><span class="p">₪16</span></div>
+      </div>
+      <p class="note">Combo: any burrito + hash browns + a drink for just ₪25 more.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ORDER -->
+<section class="order" id="order">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow">How to order <span lang="he" dir="rtl" class="he">איך מזמינים</span></span>
+      <h2>Walk up, call in,<br>or get it delivered.</h2>
+      <p>Hot burritos travel well. We wrap them tight in foil, so they arrive warm, never soggy.</p>
+    </div>
+    <div class="steps">
+      <div class="step rv"><div class="ic">🌯</div><h3>Pick</h3><p>Choose a classic, or build one: protein, salsa, add-ons.</p></div>
+      <div class="step rv"><div class="ic">🛵</div><h3>Order</h3><p>At the counter, by phone, or on delivery apps.</p></div>
+      <div class="step rv"><div class="ic">🔥</div><h3>We roll</h3><p>Eggs scrambled to order, griddled in about 6 minutes.</p></div>
+      <div class="step rv"><div class="ic">😋</div><h3>Yalla, eat!</h3><p>Grab a bench on the boulevard and unwrap.</p></div>
+    </div>
+    <div class="deliv">
+      <div class="panel rv">
+        <h3>Delivery in central Tel Aviv</h3>
+        <p>Find us on Wolt and other delivery apps, searching for "Yolk &amp; Yalla". We deliver across the Lev Ha'ir, Florentin, Neve Tzedek and Kerem HaTeimanim area, usually within 25 minutes. Menu prices on apps may differ slightly.</p>
+        <div class="pills"><span class="pill">Wolt</span><span class="pill">Delivery apps</span><span class="pill">Walk-in</span><span class="pill">Call ahead: 03-555-0142</span></div>
+      </div>
+      <div class="panel y rv">
+        <h3>Large orders?</h3>
+        <p>Office breakfast or a post-party crew? Call before 18:00 the day before for 10+ burritos at a group price.</p>
+        <p style="margin-top:.8rem"><span lang="he" dir="rtl" class="he" style="font-weight:700">הזמנות גדולות? דברו איתנו.</span></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOURS & LOCATION -->
+<section class="visit" id="visit">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow">Hours &amp; location <span lang="he" dir="rtl" class="he">שעות ומיקום</span></span>
+      <h2>Up before the sun,<br>open past midnight.</h2>
+    </div>
+    <div class="visit-grid">
+      <div class="rv">
+        <div class="open-now" id="openNow" role="status"><span class="dot"></span><span id="openTxt">Checking...</span></div>
+        <table class="hours" id="hoursTable">
+          <tbody>
+          <tr data-d="0"><td>Sunday <span lang="he" dir="rtl" class="he">ראשון</span></td><td>06:00 – 01:00</td></tr>
+          <tr data-d="1"><td>Monday <span lang="he" dir="rtl" class="he">שני</span></td><td>06:00 – 01:00</td></tr>
+          <tr data-d="2"><td>Tuesday <span lang="he" dir="rtl" class="he">שלישי</span></td><td>06:00 – 01:00</td></tr>
+          <tr data-d="3"><td>Wednesday <span lang="he" dir="rtl" class="he">רביעי</span></td><td>06:00 – 02:00</td></tr>
+          <tr data-d="4"><td>Thursday <span lang="he" dir="rtl" class="he">חמישי</span></td><td>06:00 – 03:00</td></tr>
+          <tr data-d="5"><td>Friday <span lang="he" dir="rtl" class="he">שישי</span></td><td>06:00 – 16:00</td></tr>
+          <tr data-d="6"><td>Saturday <span lang="he" dir="rtl" class="he">שבת</span></td><td>08:00 – 03:00</td></tr>
+          </tbody>
+        </table>
+        <div class="addr">
+          <b>Rothschild Blvd 42, Tel Aviv</b>
+          <span lang="he" dir="rtl" class="he">שדרות רוטשילד 42, תל אביב</span>
+          <span style="color:var(--muted);font-size:.92rem;display:block;margin-top:.4rem">Between Allenby and Herzl, just across from the kiosk benches. Wheelchair-accessible, bike racks at the door.</span>
+        </div>
+      </div>
+      <div class="map-box rv">
+        <svg viewBox="0 0 640 520" role="img" aria-label="Stylized map: Yolk and Yalla sits on Rothschild Boulevard between Allenby and Herzl streets">
+          <rect width="640" height="520" fill="#F4E8CC"/>
+          <!-- sea -->
+          <path d="M0 0H70 Q40 120 80 220 T60 520H0Z" fill="#9ED6D0"/>
+          <path d="M70 0 Q40 120 80 220 T60 520" fill="none" stroke="#1E1A17" stroke-width="3"/>
+          <text x="22" y="270" transform="rotate(-90 22 270)" text-anchor="middle" font-family="Rubik" font-size="14" fill="#0F5E59" font-weight="600" letter-spacing="3">THE MEDITERRANEAN</text>
+          <!-- blocks -->
+          <g fill="#E3D2A8" stroke="#1E1A17" stroke-width="2">
+            <rect x="110" y="30" width="110" height="100" rx="8"/><rect x="250" y="30" width="110" height="100" rx="8"/><rect x="460" y="30" width="150" height="100" rx="8"/>
+            <rect x="110" y="170" width="110" height="80" rx="8"/><rect x="460" y="170" width="150" height="80" rx="8"/>
+            <rect x="110" y="320" width="110" height="80" rx="8"/><rect x="250" y="320" width="110" height="80" rx="8"/><rect x="460" y="320" width="150" height="80" rx="8"/>
+            <rect x="110" y="440" width="110" height="60" rx="8"/><rect x="250" y="440" width="110" height="60" rx="8"/><rect x="460" y="440" width="150" height="60" rx="8"/>
+          </g>
+          <!-- Rothschild green median -->
+          <rect x="230" y="0" width="240" height="520" fill="#fff" stroke="#1E1A17" stroke-width="3" opacity="0"/>
+          <rect x="250" y="140" width="210" height="0" />
+          <g>
+            <rect x="228" y="0" width="14" height="520" fill="#FFFBF2" stroke="#1E1A17" stroke-width="2" opacity="0"/>
+          </g>
+          <!-- Horizontal main street: Allenby & Herzl -->
+          <rect x="90" y="138" width="540" height="26" fill="#FFFBF2" stroke="#1E1A17" stroke-width="3"/>
+          <rect x="90" y="258" width="0" height="0"/>
+          <rect x="90" y="408" width="540" height="26" fill="#FFFBF2" stroke="#1E1A17" stroke-width="3"/>
+          <text x="120" y="156" font-family="Rubik" font-size="12" font-weight="600" fill="#1E1A17">ALLENBY ST.</text>
+          <text x="120" y="426" font-family="Rubik" font-size="12" font-weight="600" fill="#1E1A17">HERZL ST.</text>
+          <!-- Rothschild vertical -->
+          <rect x="368" y="0" width="76" height="520" fill="#FFFBF2" stroke="#1E1A17" stroke-width="3"/>
+          <rect x="396" y="0" width="20" height="520" fill="#8fd08a" stroke="#1E1A17" stroke-width="2"/>
+          <g fill="#2F8A3E" stroke="#1E1A17" stroke-width="2">
+            <circle cx="406" cy="30" r="9"/><circle cx="406" cy="80" r="9"/><circle cx="406" cy="200" r="9"/><circle cx="406" cy="250" r="9"/><circle cx="406" cy="300" r="9"/><circle cx="406" cy="350" r="9"/><circle cx="406" cy="470" r="9"/>
+          </g>
+          <path d="M370 258H444" stroke="#1E1A17" stroke-width="2" stroke-dasharray="6 6" opacity="0"/>
+          <rect x="372" y="195" width="20" height="0"/>
+          <text x="352" y="500" transform="rotate(-90 352 500)" font-family="Rubik" font-size="16" font-weight="700" fill="#1E1A17" letter-spacing="3" opacity="0">.</text>
+          <text transform="translate(386 480) rotate(-90)" font-family="Rubik" font-size="14" font-weight="700" fill="#1E1A17" letter-spacing="4">ROTHSCHILD BLVD</text>
+          <text transform="translate(430 480) rotate(-90)" font-family="Rubik" font-size="15" font-weight="700" fill="#0F7C76" lang="he" direction="rtl">שדרות רוטשילד</text>
+          <!-- kiosk -->
+          <rect x="366" y="290" width="0" height="0"/>
+          <!-- our spot -->
+          <g>
+            <rect x="460" y="195" width="60" height="0"/>
+          </g>
+          <circle cx="406" cy="250" r="34" fill="#FFC21A" opacity=".55"/>
+          <g class="pin">
+            <path d="M406 262 C382 232 372 220 372 204 a34 34 0 1 1 68 0 C440 220 430 232 406 262Z" fill="#E8432B" stroke="#1E1A17" stroke-width="4"/>
+            <circle cx="406" cy="204" r="14" fill="#FFC21A" stroke="#1E1A17" stroke-width="3"/>
+          </g>
+          <!-- callout -->
+          <g>
+            <rect x="454" y="262" width="168" height="62" rx="12" fill="#1E1A17"/>
+            <text x="466" y="287" font-family="Secular One" font-size="19" fill="#FFC21A">Yolk &amp; Yalla</text>
+            <text x="466" y="308" font-family="Rubik" font-size="12" fill="#fff">Rothschild 42 · you are here</text>
+          </g>
+          <!-- landmarks -->
+          <g font-family="Rubik" font-size="11" fill="#1E1A17" font-weight="500">
+            <text x="118" y="95">Habima Sq. →</text>
+            <text x="468" y="215">Cafe Row</text>
+            <text x="118" y="365">Shuk HaCarmel →</text>
+            <text x="468" y="365">Neve Tzedek</text>
+          </g>
+          <!-- compass -->
+          <g transform="translate(580 480)"><circle r="22" fill="#FFFBF2" stroke="#1E1A17" stroke-width="3"/><path d="M0 -16 L6 4 L0 0 L-6 4Z" fill="#E8432B" stroke="#1E1A17" stroke-width="2"/><text y="18" text-anchor="middle" font-size="9" font-family="Rubik" font-weight="700" fill="#1E1A17" opacity="0">N</text></g>
+          <text x="580" y="450" text-anchor="middle" font-family="Rubik" font-weight="700" font-size="12">N</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GALLERY -->
+<section class="gallery" id="gallery">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow">On the grid <span lang="he" dir="rtl" class="he">באינסטגרם</span></span>
+      <h2>Tag us. <span style="color:var(--yolk)">#YolkAndYalla</span></h2>
+      <p>Cheese pulls, yolk drips and boulevard sunrises. Show us your unwrap.</p>
+      <a class="handle" href="#gallery">@yolkandyalla.tlv ↗</a>
+    </div>
+    <div class="grid">
+      <div class="tile" tabindex="0"><svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Cross-section of a burrito"><rect width="200" height="200" fill="#FFC21A"/><circle cx="100" cy="100" r="70" fill="#E9B76B" stroke="#1E1A17" stroke-width="5"/><circle cx="100" cy="100" r="56" fill="#FFF3C9" stroke="#1E1A17" stroke-width="4"/><path d="M70 90q20-26 50-6q20 24-6 40q-34 12-44-34z" fill="#FFC21A" stroke="#1E1A17" stroke-width="3"/><rect x="108" y="108" width="18" height="14" rx="3" fill="#D98A2B" stroke="#1E1A17" stroke-width="3"/><circle cx="76" cy="124" r="9" fill="#E8432B" stroke="#1E1A17" stroke-width="3"/><circle cx="122" cy="76" r="8" fill="#2F8A3E" stroke="#1E1A17" stroke-width="3"/></svg><div class="cap"><b>The cross-section</b>Yes, we cut them in half for you.</div></div>
+      <div class="tile" tabindex="0"><svg viewBox="0 0 200 400" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Sunrise over Rothschild trees"><defs><linearGradient id="sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E8432B"/><stop offset=".55" stop-color="#FF9A4D"/><stop offset="1" stop-color="#FFC21A"/></linearGradient></defs><rect width="200" height="400" fill="url(#sk)"/><circle cx="100" cy="250" r="50" fill="#FFF6E3"/><rect y="290" width="200" height="110" fill="#1E1A17"/><g fill="#0F7C76"><circle cx="30" cy="285" r="26"/><circle cx="170" cy="280" r="30"/><circle cx="100" cy="300" r="22"/></g><rect x="26" y="300" width="8" height="100" fill="#3a332d"/><rect x="166" y="300" width="8" height="100" fill="#3a332d"/></svg><div class="cap"><b>6:02 a.m.</b>First light on the boulevard.</div></div>
+      <div class="tile" tabindex="0"><svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Row of foil-wrapped burritos"><rect width="400" height="200" fill="#0F7C76"/><g stroke="#1E1A17" stroke-width="5"><rect x="30" y="60" width="90" height="46" rx="23" fill="#e9ecee" transform="rotate(-10 75 83)"/><rect x="150" y="90" width="110" height="52" rx="26" fill="#e9ecee" transform="rotate(6 205 116)"/><rect x="280" y="50" width="90" height="46" rx="23" fill="#e9ecee" transform="rotate(-4 325 73)"/></g><g fill="#E8432B"><circle cx="75" cy="83" r="10"/><circle cx="205" cy="116" r="10"/><circle cx="325" cy="73" r="10"/></g><text x="200" y="185" text-anchor="middle" font-family="Secular One" font-size="26" fill="#FFC21A">Batch no. 1</text></svg><div class="cap"><b>Lunch rush prep</b>Rolled and ready.</div></div>
+      <div class="tile" tabindex="0"><svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Iced coffee"><rect width="200" height="200" fill="#FFF6E3"/><path d="M60 40h80l-10 130q-2 12-14 12H84q-12 0-14-12z" fill="#6b4a32" stroke="#1E1A17" stroke-width="5"/><path d="M64 70h72l-3 40H67z" fill="#c9a37a"/><rect x="50" y="30" width="100" height="14" rx="7" fill="#E8432B" stroke="#1E1A17" stroke-width="4"/><path d="M120 10 l8 50" stroke="#0F7C76" stroke-width="8" stroke-linecap="round"/><rect x="82" y="100" width="24" height="24" rx="5" fill="#fff" opacity=".6" transform="rotate(12 94 112)"/></svg><div class="cap"><b>Cold brew o'clock</b>18-hour steep.</div></div>
+      <div class="tile" tabindex="0"><svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Chips and salsa"><rect width="200" height="200" fill="#E8432B"/><circle cx="100" cy="110" r="46" fill="#FFFBF2" stroke="#1E1A17" stroke-width="5"/><circle cx="100" cy="110" r="32" fill="#C22F1A" stroke="#1E1A17" stroke-width="3"/><g fill="#FFC21A" stroke="#1E1A17" stroke-width="4" stroke-linejoin="round"><path d="M20 40l50 -10l12 46l-52 6z"/><path d="M130 24l50 14l-16 44l-44 -14z"/><path d="M30 150l40 10l-10 36l-38 -12z"/></g></svg><div class="cap"><b>Chips &amp; roja</b>Never enough.</div></div>
+      <div class="tile" tabindex="0"><svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Neon sign reading Yalla"><rect width="200" height="200" fill="#1E1A17"/><text x="100" y="95" text-anchor="middle" font-family="Secular One" font-size="46" fill="#FFC21A" stroke="#FFC21A" stroke-width="1">YALLA</text><text x="100" y="140" text-anchor="middle" font-family="Rubik" font-weight="700" font-size="34" fill="#E8432B" lang="he" direction="rtl">יאללה</text><rect x="20" y="20" width="160" height="160" rx="20" fill="none" stroke="#0F7C76" stroke-width="4" stroke-dasharray="4 8"/></svg><div class="cap"><b>Late shift</b>Open till 2.</div></div>
+      <div class="tile" tabindex="0"><svg viewBox="0 0 200 400" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Melting cheese pull"><rect width="200" height="400" fill="#BFE8E1"/><path d="M0 120h200v30q-20 30-30 100q-6 40-26 40t-20-60q0-30-14-30t-14 40q0 70-20 70t-20-80q-4-50-24-60q-12-8-12-30z" fill="#FFC21A" stroke="#1E1A17" stroke-width="5"/><rect y="90" width="200" height="40" fill="#E9B76B" stroke="#1E1A17" stroke-width="5"/></svg><div class="cap"><b>The cheese pull</b>Slow-mo recommended.</div></div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-big">Yalla,<br>eat.<span lang="he" dir="rtl" class="he">יאללה, תאכלו. בוקר טוב תל אביב.</span></div>
+    <div class="foot-cols">
+      <div><h4>Find us</h4><a href="#visit">Rothschild Blvd 42<br>Tel Aviv-Yafo</a><a href="#visit" lang="he" dir="rtl">שדרות רוטשילד 42</a></div>
+      <div><h4>Hours</h4><a href="#visit">Sun–Tue 06:00–01:00</a><a href="#visit">Wed 06:00–02:00 · Thu 06:00–03:00</a><a href="#visit">Fri 06:00–16:00 · Sat 08:00–03:00</a></div>
+      <div><h4>Say hi</h4><a href="#order">03-555-0142</a><a href="#gallery">@yolkandyalla.tlv</a><a href="#order">hello@yolkandyalla.example</a></div>
+      <div><h4>Explore</h4><a href="#story">Our story</a><a href="#menu">Menu</a><a href="#order">Delivery</a></div>
+    </div>
+    <div class="copy"><span>© 2026 Yolk &amp; Yalla. Made with eggs in Tel Aviv.</span><span>Please tell us about allergies: our kitchen handles gluten, dairy, eggs, sesame and nuts.</span></div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  // mobile nav
+  var b=document.querySelector('.burger'),u=document.getElementById('navlist');
+  b.addEventListener('click',function(){var o=u.classList.toggle('open');b.setAttribute('aria-expanded',o)});
+  u.addEventListener('click',function(e){if(e.target.tagName==='A'){u.classList.remove('open');b.setAttribute('aria-expanded',false)}});
+
+  // menu filter
+  var tabs=document.querySelectorAll('.tab'),cats=document.querySelectorAll('.cat');
+  function filter(f){
+    cats.forEach(function(c){
+      var show=f==='all'||c.dataset.c===f;
+      c.hidden=!show;
+      if(show)c.classList.add('in');
+    });
+    tabs.forEach(function(t){t.setAttribute('aria-selected',t.dataset.f===f)});
+  }
+  tabs.forEach(function(t){t.addEventListener('click',function(){filter(t.dataset.f)})});
+
+  // reveal
+  var els=document.querySelectorAll('.rv');
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{threshold:.08});
+    els.forEach(function(e){io.observe(e)});
+  }else els.forEach(function(e){e.classList.add('in')});
+
+  // open now (Israel time)
+  var H={0:[6,25],1:[6,25],2:[6,25],3:[6,26],4:[6,27],5:[6,16],6:[8,27]};
+  function il(){
+    var p=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Jerusalem',weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(new Date()),o={};
+    p.forEach(function(x){o[x.type]=x.value});
+    var d={Sun:0,Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6}[o.weekday];
+    return{d:d,t:(parseInt(o.hour,10)%24)+parseInt(o.minute,10)/60};
+  }
+  function update(){
+    var n=il(),open=false;
+    // today's window
+    var h=H[n.d];if(n.t>=h[0]&&n.t<h[1])open=true;
+    // yesterday's after-midnight spill
+    var y=H[(n.d+6)%7];if(y[1]>24&&n.t<y[1]-24)open=true;
+    var el=document.getElementById('openNow');
+    el.className='open-now '+(open?'on':'off');
+    document.getElementById('openTxt').textContent=open?'We\'re open now. Yalla!':'Closed right now. Back at '+(n.t<h[0]?pad(h[0]):pad(H[(n.d+1)%7][0]))+':00';
+    document.querySelectorAll('#hoursTable tr').forEach(function(r){r.classList.toggle('today',+r.dataset.d===n.d)});
+  }
+  function pad(x){return x<10?'0'+x:x}
+  update();setInterval(update,60000);
+})();
+</script>
+</body>
+</html>
