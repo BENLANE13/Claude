@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Burrito Site Lineup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#fff8ec; --ink:#1d1a16; --muted:#6b6257; --card:#ffffff; --line:#1d1a16; --yolk:#ffc21a; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#16130f; --ink:#f6efe3; --muted:#b3a897; --card:#221e18; --line:#f6efe3; } }
+  :root[data-theme="dark"] { --bg:#16130f; --ink:#f6efe3; --muted:#b3a897; --card:#221e18; --line:#f6efe3; }
+  * { box-sizing:border-box; margin:0; }
+  body { background:var(--bg); color:var(--ink); font-family:Rubik, system-ui, sans-serif; padding:48px 16px; }
+  main { max-width:960px; margin:0 auto; }
+  h1 { font-size:clamp(2rem,6vw,3.2rem); font-weight:800; line-height:1.05; }
+  h1 span { background:var(--yolk); color:#1d1a16; padding:0 .2em; }
+  .he { font-size:1.2rem; color:var(--muted); margin:.6rem 0 2rem; }
+  p.lede { color:var(--muted); max-width:60ch; margin-bottom:2rem; line-height:1.6; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:20px; }
+  .card { display:block; background:var(--card); border:2px solid var(--line); border-radius:16px; padding:22px; color:inherit; text-decoration:none; box-shadow:6px 6px 0 var(--line); transition:transform .15s, box-shadow .15s; }
+  a.card:hover { transform:translate(-3px,-3px); box-shadow:9px 9px 0 var(--line); }
+  .model { font-size:.8rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .name { font-size:1.6rem; font-weight:800; margin:.3rem 0 .5rem; }
+  .desc { color:var(--muted); line-height:1.5; font-size:.95rem; }
+  .card.off { opacity:.55; box-shadow:none; pointer-events:none; border-style:dashed; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Breakfast burritos on <span>Rothschild</span></h1>
+  <p class="he" lang="he" dir="rtl">בוריטו בוקר · שדרות רוטשילד, תל אביב</p>
+  <p class="lede">Each model designed its own version of the site from the same brief. Open one to compare.</p>
+  <div class="grid">
+    <a class="card" href="opus/index.html">
+      <div class="model">Opus</div>
+      <div class="name">GILGUL <span lang="he" dir="rtl">גלגול</span></div>
+      <div class="desc">Night-to-sunrise sky, a floating foil burrito, a live open/closed badge, and a filterable menu with amba and schug.</div>
+    </a>
+    <a class="card" href="sonnet/index.html">
+      <div class="model">Sonnet</div>
+      <div class="name">Yolk &amp; Yalla</div>
+      <div class="desc">Neo-brutalist street-poster look in yolk yellow and tomato red, with sunburst rays, menu tabs and an SVG Rothschild map.</div>
+    </a>
+    <a class="card" href="haiku/index.html">
+      <div class="model">Haiku</div>
+      <div class="name">Sababa Burrito</div>
+      <div class="desc">Clean teal-to-orange gradient hero, an emoji-led menu grid, and a simple, friendly layout.</div>
+    </a>
+    <div class="card off">
+      <div class="model">Fable</div>
+      <div class="name">Not built yet</div>
+      <div class="desc">Needs usage credits on the account.</div>
+    </div>
+  </div>
+</main>
+</body>
+</html>
