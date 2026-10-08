@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BODE Rider</title>
+<link rel="icon" href="logo-mark.svg">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700&family=Instrument+Sans:wght@400;600&family=JetBrains+Mono:wght@600&display=swap">
+<style>
+:root{--violet:#6B3BFF;--ink:#17122E;--muted:#5D5878;--bg:#F3F1FA;--surface:#fff;--line:#DCD6EE;--good:#1F9D6B;
+  --body:"Instrument Sans",Arial,sans-serif;--display:"Unbounded",Arial Black,sans-serif;--mono:"JetBrains Mono",monospace}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font:15px/1.5 var(--body);color:var(--ink);background:var(--bg);display:grid;grid-template-rows:auto 1fr}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top,0px));background:var(--surface);border-bottom:1px solid var(--line)}
+.brand{display:flex;gap:10px;align-items:center;font:700 18px var(--display);letter-spacing:.12em;color:var(--violet)}
+select{font:600 14px var(--body);padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+main{position:relative;min-height:0}
+#map{position:absolute;inset:0}
+.panel{position:absolute;z-index:500;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));max-width:420px;background:var(--surface);border-radius:18px;
+  box-shadow:0 10px 30px rgba(23,18,46,.18);padding:16px;display:grid;gap:12px}
+.board{position:absolute;z-index:500;right:12px;top:12px;width:280px;background:var(--surface);border-radius:16px;box-shadow:0 10px 30px rgba(23,18,46,.15);padding:12px 14px}
+.board h2{font:700 13px var(--display);margin:0 0 8px}
+.board ol{margin:0;padding-left:20px;display:grid;gap:4px;font-size:14px}
+.board li span{float:right;font:600 13px var(--mono)}
+.tabs{display:flex;gap:4px;margin-bottom:8px}
+.tabs button{flex:1;border:0;background:var(--bg);border-radius:8px;padding:6px;font:600 12px var(--body);cursor:pointer;color:var(--muted)}
+.tabs button[aria-pressed=true]{background:var(--violet);color:#fff}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stats div{background:var(--bg);border-radius:10px;padding:8px 10px}
+.stats small{display:block;font:600 10px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.stats b{font:600 18px var(--mono)}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+button.main{flex:1;border:0;border-radius:999px;padding:13px 16px;font:600 15px var(--body);background:var(--violet);color:#fff;cursor:pointer}
+button.alt{border:1.5px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;padding:12px 14px;font:600 14px var(--body);cursor:pointer}
+button:disabled{opacity:.5;cursor:default}
+#msg{font-size:14px;color:var(--muted);margin:0}
+.drone-pin{width:22px;height:22px;border-radius:50%;background:var(--violet);border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.roost-pin{width:14px;height:14px;border-radius:4px;background:var(--ink);border:2px solid #fff}
+@media (max-width:640px){.board{left:12px;right:12px;width:auto;top:12px}.board ol{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><img src="logo-mark.svg" width="30" height="30" alt="">BODE</div>
+  <select id="campus" aria-label="Campus"></select>
+</header>
+<main>
+  <div id="map" aria-label="Campus map"></div>
+
+  <aside class="board" aria-label="Campus Wars leaderboard">
+    <h2>Campus Wars</h2>
+    <div class="tabs" role="group" aria-label="Rank by">
+      <button data-m="shade" aria-pressed="true">Shade-min</button>
+      <button data-m="km" aria-pressed="false">km</button>
+      <button data-m="per" aria-pressed="false">Per 100</button>
+    </div>
+    <ol id="standings"></ol>
+  </aside>
+
+  <section class="panel" aria-live="polite">
+    <div class="stats">
+      <div><small>Walked</small><b id="s-dist">0 m</b></div>
+      <div><small>Shade</small><b id="s-shade">0.0 min</b></div>
+      <div><small>Fare</small><b id="s-fare">$0.00</b></div>
+    </div>
+    <p id="msg">Pick your campus, then unlock the nearest BODE.</p>
+    <div class="row">
+      <button class="main" id="unlock">Unlock nearest BODE</button>
+      <button class="alt" id="demo" title="Simulate a walk if your device has no GPS">Demo walk</button>
+      <button class="alt" id="end" disabled>End ride</button>
+    </div>
+  </section>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const API = location.origin;          // served by bode_link.server
+const RIDER = (() => { try { let id = localStorage.getItem('bode-rider'); if (!id) { id = 'rider_' + Math.random().toString(36).slice(2, 10); localStorage.setItem('bode-rider', id); } return id; } catch { return 'rider_anon'; } })();
+
+const map = L.map('map', { zoomControl: false }).setView([33.4242, -111.9281], 16);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+const droneIcon = L.divIcon({ className: '', html: '<div class="drone-pin"></div>', iconSize: [22, 22] });
+const roostIcon = L.divIcon({ className: '', html: '<div class="roost-pin"></div>', iconSize: [14, 14] });
+const fleetLayer = L.layerGroup().addTo(map);
+const pathLine = L.polyline([], { color: '#6B3BFF', weight: 6, opacity: .9 }).addTo(map);
+let me = null, trip = null, watchId = null, demoTimer = null, queue = [], startedAt = null, campuses = [];
+
+const $ = id => document.getElementById(id);
+const say = t => $('msg').textContent = t;
+
+async function api(path, opts = {}) {
+  const r = await fetch(API + path, { headers: { 'Content-Type': 'application/json' }, ...opts });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || r.statusText);
+  return data;
+}
+
+async function loadCampuses() {
+  try {
+    campuses = (await api('/v1/campuses')).campuses;
+  } catch {
+    say('Cannot reach the BODE server. Start it with: python3 -m bode_link.server');
+    return;
+  }
+  $('campus').innerHTML = '';
+  campuses.forEach(c => $('campus').add(new Option(c.name, c.campus_id)));
+  $('campus').onchange = () => { const c = current(); map.setView([c.lat, c.lon], 16); refreshFleet(); };
+  map.setView([campuses[0].lat, campuses[0].lon], 16);
+  refreshFleet(); refreshBoard('shade');
+  setInterval(refreshFleet, 10000);
+}
+const current = () => campuses.find(c => c.campus_id === $('campus').value) || campuses[0];
+
+async function refreshFleet() {
+  try {
+    const [stations, vehicles] = await Promise.all([api('/gbfs/station_information.json'), api('/gbfs/vehicle_status.json')]);
+    fleetLayer.clearLayers();
+    stations.data.stations.forEach(s => L.marker([s.lat, s.lon], { icon: roostIcon }).bindTooltip(s.name[0].text).addTo(fleetLayer));
+    vehicles.data.vehicles.filter(v => !v.is_reserved).forEach(v =>
+      L.marker([v.lat + (Math.random() - .5) * 0.00012, v.lon + (Math.random() - .5) * 0.00012], { icon: droneIcon })
+        .bindTooltip(`${v.vehicle_id} · ${Math.round(v.current_fuel_percent * 100)}%`).addTo(fleetLayer));
+  } catch { /* keep the last view */ }
+}
+
+async function refreshBoard(metric) {
+  try {
+    const { standings } = await api('/v1/campuses/leaderboard?metric=' + metric);
+    const ol = $('standings'); ol.innerHTML = '';
+    standings.forEach(s => {
+      const li = document.createElement('li');
+      li.textContent = s.name;
+      const v = document.createElement('span'); v.textContent = s.value.toLocaleString(); li.appendChild(v);
+      ol.appendChild(li);
+    });
+  } catch { /* offline */ }
+}
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  refreshBoard(b.dataset.m);
+});
+
+function position() {
+  return new Promise(resolve => {
+    if (!navigator.geolocation) return resolve(null);
+    navigator.geolocation.getCurrentPosition(p => resolve([p.coords.latitude, p.coords.longitude]), () => resolve(null), { enableHighAccuracy: true, timeout: 6000 });
+  });
+}
+
+async function unlock(useDemo) {
+  const c = current();
+  let at = useDemo ? null : await position();
+  if (!at) { at = [c.lat, c.lon]; useDemo = true; }
+  try {
+    trip = await api('/v1/trips', { method: 'POST', body: JSON.stringify({ rider_id: RIDER, campus_id: c.campus_id, lat: at[0], lon: at[1] }) });
+  } catch (e) { say(e.message); return; }
+  startedAt = Date.now(); pathLine.setLatLngs([]);
+  $('unlock').disabled = true; $('demo').disabled = true; $('end').disabled = false;
+  say(`${trip.drone_id} is on its way. Start walking and it will find the sun angle.`);
+  refreshFleet();
+  useDemo ? startDemo(at) : startGps();
+  me = setInterval(flush, 4000);
+}
+
+function record(lat, lon) {
+  pathLine.addLatLng([lat, lon]);
+  queue.push({ lat, lon, t: new Date().toISOString() });
+}
+function startGps() {
+  watchId = navigator.geolocation.watchPosition(p => record(p.coords.latitude, p.coords.longitude), () => say('Location lost. Your ride continues; we will catch up.'), { enableHighAccuracy: true });
+}
+function startDemo([lat, lon]) {
+  let i = 0, heading = Math.random() * Math.PI * 2;
+  demoTimer = setInterval(() => {
+    heading += (Math.random() - .5) * .5;
+    lat += Math.cos(heading) * 0.000013; lon += Math.sin(heading) * 0.000016; // about 1.4 m/s
+    record(lat, lon); if (++i % 5 === 0) map.panTo([lat, lon]);
+  }, 1000);
+}
+async function flush() {
+  if (!trip || !queue.length) return;
+  const points = queue.splice(0);
+  try {
+    const t = await api(`/v1/trips/${trip.trip_id}/points`, { method: 'POST', body: JSON.stringify({ points }) });
+    show(t);
+  } catch { queue.unshift(...points); }
+}
+function show(t) {
+  const mins = Math.max(1, Math.ceil((Date.now() - startedAt) / 60000));
+  $('s-dist').textContent = t.distance_m >= 1000 ? (t.distance_m / 1000).toFixed(2) + ' km' : Math.round(t.distance_m) + ' m';
+  $('s-shade').textContent = t.shade_minutes.toFixed(1) + ' min';
+  $('s-fare').textContent = '$' + (t.price_usd ?? (1 + .25 * mins)).toFixed(2);
+}
+async function end() {
+  clearInterval(me); clearInterval(demoTimer); if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+  await flush();
+  try {
+    const t = await api(`/v1/trips/${trip.trip_id}/end`, { method: 'POST' });
+    show(t);
+    say(`Ride ended. ${t.points} points for ${current().name}. ${t.drone_id} is flying home to its Roost.`);
+  } catch (e) { say(e.message); }
+  trip = null; watchId = null;
+  $('unlock').disabled = false; $('demo').disabled = false; $('end').disabled = true;
+  refreshFleet(); refreshBoard(document.querySelector('.tabs [aria-pressed=true]').dataset.m);
+}
+$('unlock').onclick = () => unlock(false);
+$('demo').onclick = () => unlock(true);
+$('end').onclick = end;
+loadCampuses();
+</script>
+</body>
+</html>

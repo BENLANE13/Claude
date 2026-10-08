@@ -1,0 +1,527 @@
+<title>BODE Shade Drones</title>
+<meta name="description" content="BODE: solar-powered AI drones that follow you across campus and angle themselves to keep you in the shade.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: split hero with a live sun-angle instrument, then a single column of
+   sections; violet is the only brand color, amber appears only as the sun. */
+:root{
+  --bg:#F3F1FA; --surface:#FFFFFF; --ink:#17122E; --muted:#5D5878; --line:#DCD6EE;
+  --violet:#6B3BFF; --violet-ink:#FFFFFF; --violet-soft:#E6DEFF; --violet-mid:#B9A3FF;
+  --sun:#FFB020; --shade:#2A2150; --good:#1F9D6B;
+  --display:"Unbounded","Arial Black",system-ui,sans-serif;
+  --body:"Instrument Sans","Helvetica Neue",Arial,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --r:14px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0F0B1F; --surface:#18122F; --ink:#EDEAF8; --muted:#A49FC0; --line:#2E2650;
+  --violet:#8A63FF; --violet-ink:#FFFFFF; --violet-soft:#241A4A; --violet-mid:#5B44B0;
+  --sun:#FFB833; --shade:#0A0716; --good:#3CCB91; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F0B1F; --surface:#18122F; --ink:#EDEAF8; --muted:#A49FC0; --line:#2E2650;
+  --violet:#8A63FF; --violet-ink:#FFFFFF; --violet-soft:#241A4A; --violet-mid:#5B44B0;
+  --sun:#FFB833; --shade:#0A0716; --good:#3CCB91; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:400 17px/1.6 var(--body);padding-inline:clamp(16px,4vw,48px)}
+.wrap{max-width:1160px;margin-inline:auto}
+h1,h2,h3{font-family:var(--display);line-height:1.08;text-wrap:balance;margin:0}
+h2{font-size:clamp(28px,4vw,44px);font-weight:700;letter-spacing:-.01em}
+h3{font-size:18px;font-weight:700}
+p{margin:0}
+a{color:var(--violet)}
+:focus-visible{outline:3px solid var(--violet);outline-offset:3px;border-radius:6px}
+.eyebrow{font:600 12px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--violet)}
+.lede{color:var(--muted);max-width:60ch}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+section{padding-block:clamp(56px,8vw,104px);border-top:1px solid var(--line)}
+.sec-head{display:grid;gap:14px;margin-bottom:40px}
+
+/* Nav */
+nav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:20px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--violet)}
+.brand span{font:800 22px/1 var(--display);letter-spacing:.14em}
+.navlinks{display:flex;gap:22px;flex-wrap:wrap;align-items:center}
+.navlinks a{color:var(--ink);text-decoration:none;font-weight:500;font-size:15px}
+.navlinks a:hover{color:var(--violet)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;cursor:pointer;
+  background:var(--violet);color:var(--violet-ink);font:600 15px/1 var(--body);padding:14px 22px;border-radius:999px;text-decoration:none}
+.btn:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--line)}
+.navlinks .btn{color:var(--violet-ink);padding:11px 18px}
+
+/* Hero */
+.hero{display:grid;grid-template-columns:1.05fr 1fr;gap:clamp(28px,5vw,64px);align-items:center;padding-block:clamp(32px,6vw,72px) clamp(56px,8vw,96px)}
+.hero>*{min-width:0}
+.hero h1{font-size:clamp(40px,6.4vw,78px);font-weight:800;letter-spacing:-.02em}
+.hero h1 em{font-style:normal;color:var(--violet)}
+.hero .lede{font-size:19px;margin-top:22px}
+.cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:30px}
+.hero-facts{display:flex;gap:28px;flex-wrap:wrap;margin-top:34px;padding-top:24px;border-top:1px solid var(--line)}
+.hero-facts div{display:grid;gap:2px}
+.hero-facts b{font:700 24px/1 var(--display)}
+.hero-facts small{color:var(--muted);font-size:13px}
+
+.instrument{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:18px;display:grid;gap:14px}
+.instrument canvas{width:100%;height:auto;aspect-ratio:16/11;display:block;border-radius:14px;background:var(--violet-soft)}
+.inst-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.inst-row label{font:600 12px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.inst-row input[type=range]{flex:1;min-width:160px;accent-color:var(--violet)}
+.readouts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.readouts div{background:var(--bg);border-radius:10px;padding:10px 12px;display:grid;gap:4px;min-width:0}
+.readouts small{font:600 10.5px/1.1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.readouts b{font:600 18px/1 var(--mono);font-variant-numeric:tabular-nums}
+.inst-note{font-size:13px;color:var(--muted)}
+
+/* Steps */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.step{display:grid;gap:12px;align-content:start;padding-top:18px;border-top:3px solid var(--violet)}
+.step .n{font:600 13px/1 var(--mono);color:var(--violet)}
+.step p{color:var(--muted)}
+
+/* Pricing */
+.prices{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.price{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:26px;display:grid;gap:14px;align-content:start}
+.price.feature{background:var(--violet);color:var(--violet-ink);border-color:var(--violet)}
+.price.feature .muted,.price.feature ul{color:inherit;opacity:.92}
+.price .amt{font:800 40px/1 var(--display)}
+.price .amt small{font:500 15px var(--body)}
+.price ul{margin:0;padding-left:18px;display:grid;gap:6px;color:var(--muted);font-size:15px}
+.muted{color:var(--muted)}
+
+/* Campus Wars */
+.wars{display:grid;grid-template-columns:1.1fr 1fr;gap:28px;align-items:start}
+.wars>*{min-width:0}
+.map-card{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:16px;display:grid;gap:12px}
+.map-card svg{width:100%;height:auto;display:block;border-radius:12px}
+.map-stats{display:flex;gap:10px;flex-wrap:wrap}
+.chip{font:600 12.5px/1 var(--mono);padding:8px 11px;border-radius:999px;background:var(--violet-soft);color:var(--ink);font-variant-numeric:tabular-nums}
+.chip.live::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--good);margin-right:7px;vertical-align:1px}
+.board{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:8px 18px 18px}
+.board-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;padding:14px 0 10px}
+.tabs{display:flex;gap:4px;background:var(--bg);padding:4px;border-radius:999px}
+.tabs button{border:0;background:transparent;color:var(--muted);font:600 13px/1 var(--body);padding:8px 12px;border-radius:999px;cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th{font:600 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px 6px;border-bottom:1px solid var(--line)}
+td{padding:12px 6px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+td.num,th.num{text-align:right;font-family:var(--mono)}
+.rank{font:700 14px/1 var(--display);color:var(--violet);width:34px}
+.bar{height:6px;border-radius:3px;background:var(--violet);opacity:.85;margin-top:6px}
+.sample-tag{font-size:12.5px;color:var(--muted)}
+
+/* Partners */
+.partners{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.pcard{border:1px solid var(--line);border-radius:var(--r);padding:24px;display:grid;gap:10px;align-content:start;background:var(--surface)}
+.pcard code{font:500 13px/1.5 var(--mono);background:var(--bg);padding:2px 6px;border-radius:5px;word-break:break-all}
+.codeblock{margin-top:24px;background:var(--shade);color:#E7E1FF;border-radius:var(--r);padding:20px;overflow-x:auto;font:400 13.5px/1.65 var(--mono)}
+.codeblock .c{color:#9C90C9}
+.codeblock .k{color:#B9A3FF}
+
+/* Safety */
+.safety{display:grid;grid-template-columns:repeat(2,1fr);gap:14px 40px}
+.safety div{display:grid;gap:4px;padding-block:14px;border-bottom:1px solid var(--line)}
+.safety p{color:var(--muted);font-size:15.5px}
+
+/* Waitlist */
+.join{background:var(--violet);color:var(--violet-ink);border-radius:28px;padding:clamp(28px,5vw,56px);display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;border:0}
+.join>*{min-width:0}
+.join h2{color:inherit}
+.join p{opacity:.9;margin-top:12px}
+form{display:grid;gap:10px}
+form label{font:600 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;opacity:.85}
+form input,form select{width:100%;font:500 16px var(--body);padding:14px 16px;border-radius:12px;border:0;background:#FFFFFF;color:#17122E}
+form .btn{background:#17122E;color:#FFFFFF;margin-top:6px}
+.thanks{background:rgba(255,255,255,.14);border-radius:14px;padding:18px;font-weight:500}
+
+footer{padding-block:40px 56px;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;color:var(--muted);font-size:14px;border-top:1px solid var(--line);margin-top:clamp(56px,8vw,104px)}
+
+@media (max-width:900px){
+  .hero,.wars,.join{grid-template-columns:1fr}
+  .steps,.prices,.partners{grid-template-columns:1fr}
+  .safety{grid-template-columns:1fr}
+  .navlinks a:not(.btn){display:none}
+}
+@media (max-width:520px){.readouts{grid-template-columns:repeat(2,1fr)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+<nav aria-label="Main">
+  <a class="brand" href="#top" aria-label="BODE home">
+    <svg width="40" height="40" viewBox="0 0 120 120" aria-hidden="true">
+      <rect width="120" height="120" rx="28" fill="#6B3BFF"/>
+      <circle cx="92" cy="27" r="14" fill="#FFFFFF"/>
+      <g transform="rotate(24 60 58)"><path d="M20 62 Q60 22 100 62 Z" fill="#FFFFFF" stroke="#6B3BFF" stroke-width="6" stroke-linejoin="round"/><rect x="10" y="58" width="22" height="5" rx="2.5" fill="#FFFFFF"/><rect x="88" y="58" width="22" height="5" rx="2.5" fill="#FFFFFF"/></g>
+      <circle cx="40" cy="86" r="7" fill="#FFFFFF"/><ellipse cx="38" cy="102" rx="26" ry="4.5" fill="#B9A3FF"/>
+    </svg>
+    <span>BODE</span>
+  </a>
+  <div class="navlinks">
+    <a href="#how">How it works</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#campus-wars">Campus Wars</a>
+    <a href="#partners">Partners</a>
+    <a class="btn" href="#join">Get BODE on your campus</a>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div>
+    <p class="eyebrow">Solar shade drones · campus fleets</p>
+    <h1>Shade that <em>follows</em> you.</h1>
+    <p class="lede">Unlock a BODE from the app and it lifts off its solar Roost, finds you, and flies to the exact spot between you and the sun. Walk to class in your own patch of shade. When you're done, it flies itself home to recharge.</p>
+    <div class="cta">
+      <a class="btn" href="#join">Join the waitlist</a>
+      <a class="btn ghost" href="#how">See how it works</a>
+    </div>
+    <div class="hero-facts">
+      <div><b class="mono">$1</b><small>to unlock</small></div>
+      <div><b class="mono">25¢</b><small>per minute</small></div>
+      <div><b class="mono">~80 min</b><small>flight at midday sun</small></div>
+    </div>
+  </div>
+
+  <figure class="instrument" aria-label="Interactive sun-angle demo">
+    <canvas id="sky" width="800" height="550" role="img" aria-label="Side view: the sun, a BODE drone tilted toward it, and a person standing in its shadow"></canvas>
+    <div class="inst-row">
+      <label for="hour">Time of day</label>
+      <input id="hour" type="range" min="6.5" max="19" step="0.05" value="10.5">
+      <span class="mono" id="clock">10:30</span>
+    </div>
+    <div class="readouts" aria-live="polite">
+      <div><small>Sun height</small><b id="r-el">–</b></div>
+      <div><small>Canopy tilt</small><b id="r-tilt">–</b></div>
+      <div><small>Solar in</small><b id="r-w">–</b></div>
+      <div><small>Flight time</small><b id="r-ft">–</b></div>
+    </div>
+    <figcaption class="inst-note">Modeled for a sunny July day on a Phoenix campus. The canopy always faces the sun, so the angle that shades you is also the angle that charges BODE.</figcaption>
+  </figure>
+</header>
+
+<section id="how">
+  <div class="sec-head">
+    <p class="eyebrow">How it works</p>
+    <h2>Three taps from sun to shade.</h2>
+  </div>
+  <div class="steps">
+    <div class="step"><span class="n">1 · Unlock</span><h3>Find a BODE on the map</h3><p>Open the app, see drones parked on Roosts across campus, and tap to unlock. The nearest one launches and flies to you in under a minute.</p></div>
+    <div class="step"><span class="n">2 · Walk</span><h3>It holds the angle for you</h3><p>BODE tracks you with its cameras and GPS, predicts your next step, and keeps its 1-meter canopy on the line between your head and the sun. Your route is logged as shade-minutes for your campus.</p></div>
+    <div class="step"><span class="n">3 · Release</span><h3>It flies itself home</h3><p>End the ride and BODE returns to the closest Roost to charge in the sun. No parking, no clutter on the sidewalk, no scooters in the bushes.</p></div>
+  </div>
+</section>
+
+<section id="pricing">
+  <div class="sec-head">
+    <p class="eyebrow">Pricing</p>
+    <h2>Pay by the minute, or go unlimited.</h2>
+    <p class="lede">Priced like the scooters you already ride. A typical walk across campus takes 12 minutes and costs $4.</p>
+  </div>
+  <div class="prices">
+    <div class="price"><h3>Pay as you go</h3><div class="amt">$1 <small>+ 25¢/min</small></div><ul><li>Unlock any BODE on any campus</li><li>Shade-minutes count toward your campus</li><li>Pay by card, Apple Pay, or Google Pay</li></ul></div>
+    <div class="price feature"><h3>Campus Pass</h3><div class="amt">$14.99 <small>/ month</small></div><ul><li>Unlimited 20-minute rides with a .edu email</li><li>2× points in Campus Wars</li><li>Reserve a BODE 10 minutes ahead</li></ul></div>
+    <div class="price"><h3>BODE for Teams</h3><div class="amt">Custom</div><ul><li>Fleets for athletics, grounds crews, events, and commencement</li><li>Heat-safety reporting for outdoor staff</li><li>Branded canopies for sponsors</li></ul></div>
+  </div>
+</section>
+
+<section id="campus-wars">
+  <div class="sec-head">
+    <p class="eyebrow">Campus Wars</p>
+    <h2>Every shaded step counts for your school.</h2>
+    <p class="lede">BODE draws your walk on the campus map and adds your shade-minutes and distance to your school's total. Campuses compete each semester for the Golden Canopy, and the winner's student fund gets a share of the season's rides.</p>
+  </div>
+  <div class="wars">
+    <div class="map-card">
+      <svg id="campus" viewBox="0 0 520 380" role="img" aria-label="Campus map showing a walking route shaded by a BODE drone">
+        <rect width="520" height="380" fill="var(--violet-soft)"/>
+        <g fill="var(--surface)" stroke="var(--line)" stroke-width="1.5">
+          <rect x="30" y="30" width="120" height="80" rx="6"/><rect x="190" y="24" width="150" height="62" rx="6"/>
+          <rect x="380" y="34" width="110" height="110" rx="6"/><rect x="30" y="160" width="90" height="120" rx="6"/>
+          <rect x="180" y="150" width="160" height="70" rx="6"/><rect x="380" y="200" width="110" height="70" rx="6"/>
+          <rect x="160" y="270" width="120" height="80" rx="6"/><rect x="330" y="300" width="160" height="56" rx="6"/>
+        </g>
+        <g fill="var(--muted)" font-family="JetBrains Mono, monospace" font-size="10.5" letter-spacing=".06em">
+          <text x="44" y="74">LIBRARY</text><text x="226" y="60">SCIENCE HALL</text><text x="400" y="94">STADIUM</text>
+          <text x="40" y="224">DORMS</text><text x="222" y="190">STUDENT UNION</text><text x="398" y="240">ARTS</text>
+          <text x="186" y="314">REC CENTER</text><text x="372" y="332">ENGINEERING</text>
+        </g>
+        <path d="M0 132 H520 M160 0 V380 M360 0 V380 M0 290 H160" stroke="var(--surface)" stroke-width="12" fill="none" opacity=".7"/>
+        <path id="route" d="M75 280 L75 132 L160 132 L360 132 L360 180 L435 180 L435 200" stroke="var(--violet)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-dasharray="10 8"/>
+        <path id="walked" d="M75 280 L75 132 L160 132 L360 132 L360 180 L435 180 L435 200" stroke="var(--violet)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <g aria-hidden="true">
+          <circle cx="398" cy="66" r="10" fill="var(--sun)"/>
+          <circle id="walker" cx="75" cy="280" r="7" fill="var(--ink)"/>
+          <g id="drone"><ellipse rx="15" ry="9" fill="var(--violet)" opacity=".95"/><ellipse rx="15" ry="9" fill="none" stroke="var(--surface)" stroke-width="2"/></g>
+        </g>
+        <g fill="var(--shade)"><rect x="12" y="342" width="168" height="26" rx="13" opacity=".85"/></g>
+        <text x="26" y="359" fill="#FFFFFF" font-family="JetBrains Mono, monospace" font-size="11">Dorms → Arts · 0.6 km</text>
+      </svg>
+      <div class="map-stats">
+        <span class="chip live">Demo walk</span>
+        <span class="chip" id="m-dist">0 m walked</span>
+        <span class="chip" id="m-shade">0.0 shade-min</span>
+        <span class="chip" id="m-pts">+0 pts</span>
+      </div>
+    </div>
+
+    <div class="board">
+      <div class="board-head">
+        <h3>Fall season standings</h3>
+        <div class="tabs" role="group" aria-label="Rank by">
+          <button type="button" data-k="shade" aria-pressed="true">Shade-min</button>
+          <button type="button" data-k="km" aria-pressed="false">Distance</button>
+          <button type="button" data-k="per" aria-pressed="false">Per student</button>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>#</th><th>Campus</th><th class="num" id="colname">Shade-min</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <p class="sample-tag" style="margin-top:12px">Sample standings for illustration. Campus Wars goes live with our first pilot campuses.</p>
+    </div>
+  </div>
+</section>
+
+<section id="partners">
+  <div class="sec-head">
+    <p class="eyebrow">BODE Link · for partners</p>
+    <h2>Plugs into the apps people already ride.</h2>
+    <p class="lede">Micromobility apps like Lime run on open data standards. BODE speaks them too, so a scooter app can show BODEs on its map, book an escort for the walk after a ride, and share Campus Wars points.</p>
+  </div>
+  <div class="partners">
+    <div class="pcard"><h3>Open fleet feed</h3><p class="muted">BODE publishes a standard GBFS feed of every Roost and available drone, the same format scooter and bike fleets use. Any trip planner can list us.</p><code>/gbfs/gbfs.json</code></div>
+    <div class="pcard"><h3>Escort API</h3><p class="muted">A partner app requests a BODE for its rider with one call. We send live status by webhook: dispatched, arrived, shading, returned.</p><code>POST /v1/escorts</code></div>
+    <div class="pcard"><h3>Ride handoff</h3><p class="muted">Park your scooter, and BODE meets you at the drop zone for the last stretch on foot. Partners earn a revenue share on every handoff ride.</p><code>bode://escort?partner=…</code></div>
+  </div>
+  <pre class="codeblock"><span class="c"># A scooter app books shade for the walk after a ride</span>
+<span class="k">POST</span> /v1/escorts
+{ "partner_id": "scooter-co", "rider_ref": "r_8812",
+  "pickup": { "lat": 33.4192, "lon": -111.9340 },
+  "max_minutes": 15 }
+
+<span class="c"># 201 Created</span>
+{ "escort_id": "esc_2f9c", "status": "dispatched", "eta_seconds": 48,
+  "drone_id": "BODE-SUN-0147", "price_estimate_usd": 4.75 }</pre>
+</section>
+
+<section id="safety">
+  <div class="sec-head">
+    <p class="eyebrow">Safety</p>
+    <h2>Built to fly near people.</h2>
+  </div>
+  <div class="safety">
+    <div><h3>Guarded rotors</h3><p>Ducted props sit outside the canopy and never over your head. Soft foam rim on every edge.</p></div>
+    <div><h3>Remote ID on every drone</h3><p>Every BODE broadcasts FAA Remote ID and flies inside geofences approved by each campus.</p></div>
+    <div><h3>Human oversight</h3><p>Licensed Part 107 pilots monitor the fleet from our ops center and can take over any drone.</p></div>
+    <div><h3>Weather aware</h3><p>BODE stays on its Roost in high wind, rain, and lightning, and lands itself if conditions change mid-ride.</p></div>
+    <div><h3>Privacy first</h3><p>The tracking camera finds you on-device. No video leaves the drone, and you can delete your route history anytime.</p></div>
+    <div><h3>Quiet hours</h3><p>Campus-set no-fly times around classes, exams, and residence halls.</p></div>
+  </div>
+</section>
+
+<div class="join" id="join">
+  <div>
+    <h2>Bring BODE to your campus.</h2>
+    <p>We're picking our first three pilot campuses for next fall. The schools with the most waitlist signups move to the front of the line.</p>
+  </div>
+  <form id="wl" novalidate>
+    <label for="wl-email">School email</label>
+    <input id="wl-email" type="email" placeholder="you@university.edu" autocomplete="email" required>
+    <label for="wl-campus">Campus</label>
+    <input id="wl-campus" type="text" placeholder="Your university" required>
+    <label for="wl-role">I am a</label>
+    <select id="wl-role"><option>Student</option><option>Faculty or staff</option><option>Campus administrator</option><option>Partner or investor</option></select>
+    <button class="btn" type="submit">Join the waitlist</button>
+    <p id="wl-msg" class="thanks" hidden></p>
+  </form>
+</div>
+
+<footer>
+  <span>© 2026 BODE · Shade that follows you.</span>
+  <span>Investors and partners: use the waitlist form and choose “Partner or investor”.</span>
+</footer>
+</div>
+
+<script>
+(() => {
+  const rad = Math.PI / 180;
+
+  // NOAA solar position (same algorithm as the bode_shade engine).
+  function sun(dateUtcMs, lat, lon) {
+    const jc = (dateUtcMs / 86400000 + 2440587.5 - 2451545) / 36525;
+    const L = (280.46646 + jc * (36000.76983 + jc * 0.0003032)) % 360;
+    const M = 357.52911 + jc * (35999.05029 - 0.0001537 * jc);
+    const e = 0.016708634 - jc * (0.000042037 + 0.0000001267 * jc);
+    const C = Math.sin(M*rad)*(1.914602 - jc*(0.004817 + 0.000014*jc)) + Math.sin(2*M*rad)*(0.019993 - 0.000101*jc) + Math.sin(3*M*rad)*0.000289;
+    const om = (125.04 - 1934.136 * jc) * rad;
+    const app = L + C - 0.00569 - 0.00478 * Math.sin(om);
+    const ob = (23 + (26 + (21.448 - jc*(46.815 + jc*(0.00059 - jc*0.001813)))/60)/60 + 0.00256*Math.cos(om)) * rad;
+    const dec = Math.asin(Math.sin(ob) * Math.sin(app*rad));
+    const y = Math.tan(ob/2) ** 2, l0 = L*rad, m = M*rad;
+    const eqt = 4 / rad * (y*Math.sin(2*l0) - 2*e*Math.sin(m) + 4*e*y*Math.sin(m)*Math.cos(2*l0) - 0.5*y*y*Math.sin(4*l0) - 1.25*e*e*Math.sin(2*m));
+    const d = new Date(dateUtcMs);
+    const mins = d.getUTCHours()*60 + d.getUTCMinutes() + d.getUTCSeconds()/60;
+    const ha = (((mins + eqt + 4*lon) % 1440 + 1440) % 1440 / 4 - 180) * rad;
+    const la = lat * rad;
+    const z = Math.acos(Math.max(-1, Math.min(1, Math.sin(la)*Math.sin(dec) + Math.cos(la)*Math.cos(dec)*Math.cos(ha))));
+    let az = Math.acos(Math.max(-1, Math.min(1, (Math.sin(la)*Math.cos(z) - Math.sin(dec)) / (Math.cos(la)*Math.sin(z))))) / rad;
+    az = ha > 0 ? (az + 180) % 360 : (540 - az) % 360;
+    return { el: 90 - z / rad, az };
+  }
+  function irradiance(el) {
+    if (el <= 0) return 0;
+    const z = 90 - el;
+    const am = 1 / (Math.cos(z*rad) + 0.50572 * Math.pow(96.07995 - z, -1.6364));
+    return 1353 * Math.pow(0.7, Math.pow(am, 0.678));
+  }
+  const HOVER_W = 181, BATTERY_WH = 59.2;
+  const solarW = el => 0.785 * 0.85 * 0.23 * 0.95 * irradiance(el);
+
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const cv = document.getElementById('sky'), ctx = cv.getContext('2d');
+  const hour = document.getElementById('hour');
+  const W = cv.width, H = cv.height, ground = H - 64, px = 62; // px per metre
+
+  function draw() {
+    const h = +hour.value;
+    const hh = Math.floor(h), mm = Math.round((h - hh) * 60);
+    document.getElementById('clock').textContent = `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+    // Phoenix, 15 July 2026, local time = UTC-7
+    const s = sun(Date.UTC(2026, 6, 15, hh + 7, mm), 33.45, -112.07);
+    const east = s.az < 180; // sun on the right in the morning
+    const dir = east ? 1 : -1;
+
+    ctx.clearRect(0, 0, W, H);
+    // sky gradient band
+    const g = ctx.createLinearGradient(0, 0, 0, ground);
+    g.addColorStop(0, css('--violet-soft')); g.addColorStop(1, css('--surface'));
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, ground);
+    ctx.fillStyle = css('--line'); ctx.fillRect(0, ground, W, H - ground);
+
+    const personX = W/2 - dir * 150, headY = ground - 1.75 * px;
+    const el = Math.max(s.el, 0.1);
+    let clearance = 2.0, standoff = clearance / Math.tan(el*rad);
+    if (standoff > 6) { standoff = 6; clearance = Math.max(1.2, 6 * Math.tan(el*rad)); }
+    const flying = s.el >= 8;
+    const dx = personX + dir * standoff * px, dy = headY - clearance * px;
+
+    // sun on its arc
+    const sunR = Math.min(420, (headY - 44) / Math.sin(el*rad), (dir > 0 ? W - 44 - personX : personX - 44) / Math.cos(el*rad)), sx = personX + dir * Math.cos(el*rad) * sunR, sy = headY - Math.sin(el*rad) * sunR;
+    ctx.fillStyle = css('--sun');
+    ctx.beginPath(); ctx.arc(sx, sy, 30, 0, 7); ctx.fill();
+
+    if (flying) {
+      // shadow band: the canopy's shadow travels away from the sun, through the head
+      const half = 0.5 * px, len = (ground - dy) / Math.sin(el*rad) + 40;
+      ctx.fillStyle = css('--violet'); ctx.globalAlpha = 0.22;
+      const perp = [Math.sin(el*rad) * dir, Math.cos(el*rad)];
+      const a = [dx + perp[0]*half, dy + perp[1]*half], b = [dx - perp[0]*half, dy - perp[1]*half];
+      const ray = [-dir*Math.cos(el*rad), Math.sin(el*rad)];
+      ctx.beginPath();
+      ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]);
+      ctx.lineTo(b[0] + ray[0]*len, b[1] + ray[1]*len); ctx.lineTo(a[0] + ray[0]*len, a[1] + ray[1]*len);
+      ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1;
+
+      // drone: tilted canopy facing the sun
+      ctx.save(); ctx.translate(dx, dy); ctx.rotate(dir * (90 - s.el) * rad);
+      ctx.fillStyle = css('--violet');
+      ctx.beginPath(); ctx.ellipse(0, 0, half, 10, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = css('--ink');
+      ctx.fillRect(-half - 30, -4, 26, 6); ctx.fillRect(half + 4, -4, 26, 6);
+      ctx.restore();
+    } else {
+      // perched on its Roost
+      const rx = personX + dir * 150;
+      ctx.fillStyle = css('--muted'); ctx.fillRect(rx - 3, ground - 70, 6, 70);
+      ctx.fillStyle = css('--violet');
+      ctx.beginPath(); ctx.ellipse(rx, ground - 74, 0.5*px, 7, 0, 0, 7); ctx.fill();
+    }
+
+    // person
+    ctx.fillStyle = css('--ink');
+    ctx.beginPath(); ctx.arc(personX, headY + 13, 13, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(personX - 12, headY + 30, 24, 1.75*px - 30, 8); ctx.fill();
+
+    ctx.fillStyle = css('--muted'); ctx.font = '600 22px JetBrains Mono, monospace';
+    ctx.fillText(flying ? `${clearance.toFixed(1)} m above you · ${standoff.toFixed(1)} m toward the sun` : 'Sun too low: BODE rests on its Roost', 24, H - 22);
+
+    const w = flying ? solarW(s.el) : 0;
+    const ft = flying ? BATTERY_WH / (HOVER_W - w) * 60 : 0;
+    document.getElementById('r-el').textContent = `${s.el.toFixed(0)}°`;
+    document.getElementById('r-tilt').textContent = flying ? `${(90 - s.el).toFixed(0)}°` : '–';
+    document.getElementById('r-w').textContent = flying ? `${w.toFixed(0)} W` : 'charging';
+    document.getElementById('r-ft').textContent = flying ? `${ft.toFixed(0)} min` : '–';
+  }
+  hour.addEventListener('input', draw);
+  matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', draw);
+  new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  draw();
+  document.fonts?.ready.then(draw);
+
+  // Campus Wars demo walk
+  const route = document.getElementById('walked'), walker = document.getElementById('walker'), drone = document.getElementById('drone');
+  const total = route.getTotalLength(), metresPerUnit = 600 / total;
+  route.style.strokeDasharray = `${total}`;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let t0 = null;
+  function step(ts) {
+    if (t0 === null) t0 = ts;
+    const f = reduce ? 0.62 : ((ts - t0) / 14000) % 1;
+    const d = f * total, p = route.getPointAtLength(d);
+    route.style.strokeDashoffset = `${total - d}`;
+    walker.setAttribute('cx', p.x); walker.setAttribute('cy', p.y);
+    drone.setAttribute('transform', `translate(${p.x + 14} ${p.y - 16})`);
+    const m = d * metresPerUnit;
+    document.getElementById('m-dist').textContent = `${Math.round(m)} m walked`;
+    document.getElementById('m-shade').textContent = `${(m / 84).toFixed(1)} shade-min`;
+    document.getElementById('m-pts').textContent = `+${Math.round(m / 84 * 10)} pts`;
+    if (!reduce) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+
+  // Leaderboard (sample data)
+  const campuses = [
+    { name: 'Sonoran State', shade: 48210, km: 3920, students: 41000 },
+    { name: 'Gulf Coast Tech', shade: 39875, km: 3310, students: 22000 },
+    { name: 'Mesa Valley University', shade: 35140, km: 2905, students: 30500 },
+    { name: 'Palmetto College', shade: 21960, km: 1840, students: 9800 },
+    { name: 'High Plains A&M', shade: 18420, km: 1575, students: 27000 },
+  ];
+  const labels = { shade: 'Shade-min', km: 'Distance (km)', per: 'Min / 100 students' };
+  const val = (c, k) => k === 'per' ? c.shade / c.students * 100 : c[k];
+  function renderBoard(k) {
+    const list = [...campuses].sort((a, b) => val(b, k) - val(a, k));
+    const max = val(list[0], k);
+    document.getElementById('colname').textContent = labels[k];
+    const tb = document.getElementById('rows'); tb.textContent = '';
+    list.forEach((c, i) => {
+      const tr = document.createElement('tr');
+      const v = val(c, k);
+      tr.innerHTML = `<td class="rank">${i + 1}</td><td><span></span><div class="bar" style="width:${(v / max * 100).toFixed(1)}%"></div></td><td class="num">${k === 'per' ? v.toFixed(1) : Math.round(v).toLocaleString()}</td>`;
+      tr.querySelector('span').textContent = c.name;
+      tb.appendChild(tr);
+    });
+  }
+  document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    renderBoard(b.dataset.k);
+  }));
+  renderBoard('shade');
+
+  // Waitlist
+  const form = document.getElementById('wl'), msg = document.getElementById('wl-msg');
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const email = document.getElementById('wl-email'), campus = document.getElementById('wl-campus');
+    if (!email.value.includes('@') || !campus.value.trim()) {
+      msg.hidden = false; msg.textContent = 'Enter your school email and campus to join.'; return;
+    }
+    // Production: POST to the waitlist endpoint (see bode/website/README.md).
+    msg.hidden = false;
+    msg.textContent = `You're on the list. We'll email ${email.value} when ${campus.value.trim()} is in the running for a pilot.`;
+    form.querySelectorAll('input,select,button').forEach(el => el.disabled = true);
+  });
+})();
+</script>

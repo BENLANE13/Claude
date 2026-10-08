@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="BODE logo">
+  <title>BODE</title>
+  <rect width="120" height="120" rx="28" fill="#6B3BFF"/>
+  <!-- the sun, eclipsed by the canopy -->
+  <circle cx="92" cy="27" r="14" fill="#FFFFFF"/>
+  <!-- canopy, tilted to face the sun; violet stroke cuts it out of the sun -->
+  <g transform="rotate(24 60 58)">
+    <path d="M20 62 Q60 22 100 62 Z" fill="#FFFFFF" stroke="#6B3BFF" stroke-width="6" stroke-linejoin="round"/>
+    <!-- rotors -->
+    <rect x="10" y="58" width="22" height="5" rx="2.5" fill="#FFFFFF"/>
+    <rect x="88" y="58" width="22" height="5" rx="2.5" fill="#FFFFFF"/>
+  </g>
+  <!-- you, in the shade -->
+  <circle cx="40" cy="86" r="7" fill="#FFFFFF"/>
+  <ellipse cx="38" cy="102" rx="26" ry="4.5" fill="#B9A3FF"/>
+</svg>
