@@ -46,7 +46,7 @@ CLOUD_PER_RIDE = 0.03
 HEADCOUNT = [10, 28, 60]
 LOADED_COST_PER_HEAD = 160_000
 RND_NON_PAYROLL = [600_000, 900_000, 1_200_000]
-MARKETING = [250_000, 900_000, 2_000_000]  # Campus Wars season prizes, ambassadors
+MARKETING = [250_000, 900_000, 2_000_000]  # launch events, ambassadors, social
 GA_NON_PAYROLL = [250_000, 500_000, 900_000]
 
 # ---------------------------------------------------------------------------

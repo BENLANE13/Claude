@@ -5,12 +5,12 @@ BODE runs Lime-style shared fleets of solar-powered AI drones on hot college cam
 ## What's here
 | Path | What |
 |---|---|
-| `docs/` | Market research, business plan, product spec, regulatory, go-to-market, partner integration, **pitches**, launch checklist |
+| `docs/` | Market research, business plan, product spec, regulatory, go-to-market, partner integration, **pitches**, launch checklist, fun feature ideas |
 | `brand/` | Logo (SVG), color, type, voice |
 | `website/` | Marketing site ([live preview](https://claude.ai/artifact/8rcrd6uA536sNF8PFQaQFU)) |
-| `app/` | Rider web app: live map, unlock, GPS path tracking, Campus Wars leaderboard |
+| `app/` | Rider web app: live map, unlock, GPS path tracking, ride receipt |
 | `software/bode_shade/` | Sun position, shade positioning solver, solar/flight energy model |
-| `software/bode_link/` | Fleet + trips + Campus Wars + partner escort API + GBFS feeds + HTTP server |
+| `software/bode_link/` | Fleet + trips with path tracking + partner escort API + GBFS feeds + HTTP server |
 | `financials/` | 3-year fleet financial model (`model.py` → `pnl.csv`) |
 
 ## Run it

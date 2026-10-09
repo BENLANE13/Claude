@@ -22,7 +22,8 @@ These are the steps founders usually take when starting a company with Claude Co
 
 ## Product
 - ✅ Shade-positioning engine with tests
-- ✅ Fleet/trip/Campus Wars backend + partner API + GBFS feeds, with tests
+- ✅ Fleet/trip backend with path tracking + partner API + GBFS feeds, with tests
+- ✅ Fun feature proposals (`09-fun-features.md`); pick which to build
 - ✅ Rider web app with live map and GPS path tracking (`app/`)
 - ✅ Marketing website (`website/`, published as a claude.ai artifact)
 - 🔲 Hire a drone hardware engineer or contract design firm; build 3 prototypes

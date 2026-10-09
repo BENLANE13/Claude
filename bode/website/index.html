@@ -91,27 +91,21 @@ nav{display:flex;align-items:center;justify-content:space-between;gap:16px;paddi
 .price ul{margin:0;padding-left:18px;display:grid;gap:6px;color:var(--muted);font-size:15px}
 .muted{color:var(--muted)}
 
-/* Campus Wars */
-.wars{display:grid;grid-template-columns:1.1fr 1fr;gap:28px;align-items:start}
-.wars>*{min-width:0}
+/* Your walk */
+.walk-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:28px;align-items:start}
+.walk-grid>*{min-width:0}
 .map-card{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:16px;display:grid;gap:12px}
 .map-card svg{width:100%;height:auto;display:block;border-radius:12px}
 .map-stats{display:flex;gap:10px;flex-wrap:wrap}
 .chip{font:600 12.5px/1 var(--mono);padding:8px 11px;border-radius:999px;background:var(--violet-soft);color:var(--ink);font-variant-numeric:tabular-nums}
 .chip.live::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--good);margin-right:7px;vertical-align:1px}
-.board{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:8px 18px 18px}
-.board-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;padding:14px 0 10px}
-.tabs{display:flex;gap:4px;background:var(--bg);padding:4px;border-radius:999px}
-.tabs button{border:0;background:transparent;color:var(--muted);font:600 13px/1 var(--body);padding:8px 12px;border-radius:999px;cursor:pointer}
-.tabs button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
-table{width:100%;border-collapse:collapse;font-size:15px}
-th{font:600 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px 6px;border-bottom:1px solid var(--line)}
-td{padding:12px 6px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
-td.num,th.num{text-align:right;font-family:var(--mono)}
-.rank{font:700 14px/1 var(--display);color:var(--violet);width:34px}
-.bar{height:6px;border-radius:3px;background:var(--violet);opacity:.85;margin-top:6px}
-.sample-tag{font-size:12.5px;color:var(--muted)}
-
+.receipt{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:22px;display:grid;gap:16px}
+.receipt dl{margin:0;display:grid;grid-template-columns:1fr auto;gap:10px 0;font-size:15px;align-items:baseline}
+.receipt dd{padding-left:16px}
+.receipt dt{color:var(--muted)}
+.receipt dd{margin:0;font:600 15px/1.4 var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+.receipt .total{border-top:1px solid var(--line);padding-top:12px}
+.receipt p{color:var(--muted);font-size:14.5px}
 /* Partners */
 .partners{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
 .pcard{border:1px solid var(--line);border-radius:var(--r);padding:24px;display:grid;gap:10px;align-content:start;background:var(--surface)}
@@ -139,7 +133,7 @@ form .btn{background:#17122E;color:#FFFFFF;margin-top:6px}
 footer{padding-block:40px 56px;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;color:var(--muted);font-size:14px;border-top:1px solid var(--line);margin-top:clamp(56px,8vw,104px)}
 
 @media (max-width:900px){
-  .hero,.wars,.join{grid-template-columns:1fr}
+  .hero,.walk-grid,.join{grid-template-columns:1fr}
   .steps,.prices,.partners{grid-template-columns:1fr}
   .safety{grid-template-columns:1fr}
   .navlinks a:not(.btn){display:none}
@@ -162,7 +156,7 @@ footer{padding-block:40px 56px;display:flex;justify-content:space-between;gap:20
   <div class="navlinks">
     <a href="#how">How it works</a>
     <a href="#pricing">Pricing</a>
-    <a href="#campus-wars">Campus Wars</a>
+    <a href="#your-walk">Your walk</a>
     <a href="#partners">Partners</a>
     <a class="btn" href="#join">Get BODE on your campus</a>
   </div>
@@ -221,18 +215,18 @@ footer{padding-block:40px 56px;display:flex;justify-content:space-between;gap:20
   </div>
   <div class="prices">
     <div class="price"><h3>Pay as you go</h3><div class="amt">$1 <small>+ 25¢/min</small></div><ul><li>Unlock any BODE on any campus</li><li>Shade-minutes count toward your campus</li><li>Pay by card, Apple Pay, or Google Pay</li></ul></div>
-    <div class="price feature"><h3>Campus Pass</h3><div class="amt">$14.99 <small>/ month</small></div><ul><li>Unlimited 20-minute rides with a .edu email</li><li>2× points in Campus Wars</li><li>Reserve a BODE 10 minutes ahead</li></ul></div>
+    <div class="price feature"><h3>Campus Pass</h3><div class="amt">$14.99 <small>/ month</small></div><ul><li>Unlimited 20-minute rides with a .edu email</li><li>Priority unlocks during heat advisories</li><li>Reserve a BODE 10 minutes ahead</li></ul></div>
     <div class="price"><h3>BODE for Teams</h3><div class="amt">Custom</div><ul><li>Fleets for athletics, grounds crews, events, and commencement</li><li>Heat-safety reporting for outdoor staff</li><li>Branded canopies for sponsors</li></ul></div>
   </div>
 </section>
 
-<section id="campus-wars">
+<section id="your-walk">
   <div class="sec-head">
-    <p class="eyebrow">Campus Wars</p>
-    <h2>Every shaded step counts for your school.</h2>
-    <p class="lede">BODE draws your walk on the campus map and adds your shade-minutes and distance to your school's total. Campuses compete each semester for the Golden Canopy, and the winner's student fund gets a share of the season's rides.</p>
+    <p class="eyebrow">Your walk, mapped</p>
+    <h2>See exactly where the shade went with you.</h2>
+    <p class="lede">The app draws your route live on the campus map as you walk. When you end the ride, you get a receipt with your path, distance, and how many minutes you spent in BODE's shade.</p>
   </div>
-  <div class="wars">
+  <div class="walk-grid">
     <div class="map-card">
       <svg id="campus" viewBox="0 0 520 380" role="img" aria-label="Campus map showing a walking route shaded by a BODE drone">
         <rect width="520" height="380" fill="var(--violet-soft)"/>
@@ -262,24 +256,19 @@ footer{padding-block:40px 56px;display:flex;justify-content:space-between;gap:20
         <span class="chip live">Demo walk</span>
         <span class="chip" id="m-dist">0 m walked</span>
         <span class="chip" id="m-shade">0.0 shade-min</span>
-        <span class="chip" id="m-pts">+0 pts</span>
       </div>
     </div>
 
-    <div class="board">
-      <div class="board-head">
-        <h3>Fall season standings</h3>
-        <div class="tabs" role="group" aria-label="Rank by">
-          <button type="button" data-k="shade" aria-pressed="true">Shade-min</button>
-          <button type="button" data-k="km" aria-pressed="false">Distance</button>
-          <button type="button" data-k="per" aria-pressed="false">Per student</button>
-        </div>
-      </div>
-      <table>
-        <thead><tr><th>#</th><th>Campus</th><th class="num" id="colname">Shade-min</th></tr></thead>
-        <tbody id="rows"></tbody>
-      </table>
-      <p class="sample-tag" style="margin-top:12px">Sample standings for illustration. Campus Wars goes live with our first pilot campuses.</p>
+    <div class="receipt">
+      <h3>Ride receipt</h3>
+      <dl>
+        <dt>Route</dt><dd>Dorms → Arts</dd>
+        <dt>Distance</dt><dd>0.6 km</dd>
+        <dt>Time in shade</dt><dd>7.1 min</dd>
+        <dt>Sun height at start</dt><dd>58°</dd>
+        <dt class="total">Fare</dt><dd class="total">$2.75</dd>
+      </dl>
+      <p>Example receipt. Your walk history stays on your account, and you can delete any route.</p>
     </div>
   </div>
 </section>
@@ -288,7 +277,7 @@ footer{padding-block:40px 56px;display:flex;justify-content:space-between;gap:20
   <div class="sec-head">
     <p class="eyebrow">BODE Link · for partners</p>
     <h2>Plugs into the apps people already ride.</h2>
-    <p class="lede">Micromobility apps like Lime run on open data standards. BODE speaks them too, so a scooter app can show BODEs on its map, book an escort for the walk after a ride, and share Campus Wars points.</p>
+    <p class="lede">Micromobility apps like Lime run on open data standards. BODE speaks them too, so a scooter app can show BODEs on its map and book a BODE escort for the walk after a scooter ride.</p>
   </div>
   <div class="partners">
     <div class="pcard"><h3>Open fleet feed</h3><p class="muted">BODE publishes a standard GBFS feed of every Roost and available drone, the same format scooter and bike fleets use. Any trip planner can list us.</p><code>/gbfs/gbfs.json</code></div>
@@ -460,7 +449,7 @@ footer{padding-block:40px 56px;display:flex;justify-content:space-between;gap:20
   draw();
   document.fonts?.ready.then(draw);
 
-  // Campus Wars demo walk
+  // Demo walk on the campus map
   const route = document.getElementById('walked'), walker = document.getElementById('walker'), drone = document.getElementById('drone');
   const total = route.getTotalLength(), metresPerUnit = 600 / total;
   route.style.strokeDasharray = `${total}`;
@@ -476,39 +465,9 @@ footer{padding-block:40px 56px;display:flex;justify-content:space-between;gap:20
     const m = d * metresPerUnit;
     document.getElementById('m-dist').textContent = `${Math.round(m)} m walked`;
     document.getElementById('m-shade').textContent = `${(m / 84).toFixed(1)} shade-min`;
-    document.getElementById('m-pts').textContent = `+${Math.round(m / 84 * 10)} pts`;
     if (!reduce) requestAnimationFrame(step);
   }
   requestAnimationFrame(step);
-
-  // Leaderboard (sample data)
-  const campuses = [
-    { name: 'Sonoran State', shade: 48210, km: 3920, students: 41000 },
-    { name: 'Gulf Coast Tech', shade: 39875, km: 3310, students: 22000 },
-    { name: 'Mesa Valley University', shade: 35140, km: 2905, students: 30500 },
-    { name: 'Palmetto College', shade: 21960, km: 1840, students: 9800 },
-    { name: 'High Plains A&M', shade: 18420, km: 1575, students: 27000 },
-  ];
-  const labels = { shade: 'Shade-min', km: 'Distance (km)', per: 'Min / 100 students' };
-  const val = (c, k) => k === 'per' ? c.shade / c.students * 100 : c[k];
-  function renderBoard(k) {
-    const list = [...campuses].sort((a, b) => val(b, k) - val(a, k));
-    const max = val(list[0], k);
-    document.getElementById('colname').textContent = labels[k];
-    const tb = document.getElementById('rows'); tb.textContent = '';
-    list.forEach((c, i) => {
-      const tr = document.createElement('tr');
-      const v = val(c, k);
-      tr.innerHTML = `<td class="rank">${i + 1}</td><td><span></span><div class="bar" style="width:${(v / max * 100).toFixed(1)}%"></div></td><td class="num">${k === 'per' ? v.toFixed(1) : Math.round(v).toLocaleString()}</td>`;
-      tr.querySelector('span').textContent = c.name;
-      tb.appendChild(tr);
-    });
-  }
-  document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => {
-    document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
-    renderBoard(b.dataset.k);
-  }));
-  renderBoard('shade');
 
   // Waitlist
   const form = document.getElementById('wl'), msg = document.getElementById('wl-msg');

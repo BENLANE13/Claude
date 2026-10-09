@@ -27,7 +27,7 @@ The TAM/SAM figures are top-down assumptions to be validated with waitlist and p
 **Takeaway:** the idea has been prototyped, but nobody has solved flight time or built a business model. BODE's two key differences are the solar canopy (flight time) and the shared fleet (price and ops).
 
 ## Customer segments (in launch order)
-1. **Students on hot campuses.** The core rider: price-sensitive, social, and competitive (Campus Wars).
+1. **Students on hot campuses.** The core rider: price-sensitive, social, and quick to share things that look cool on video.
 2. **Universities.** Sponsors and hosts. They want heat-safety measures, sustainability stories, and recruiting buzz.
 3. **Events.** Graduations, tailgates, festivals, golf tournaments (BODE for Teams).
 4. **Outdoor workers.** Grounds crews, construction, and agriculture, driven by heat-safety rules. A later B2B line.

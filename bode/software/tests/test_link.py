@@ -45,23 +45,18 @@ class FleetTests(unittest.TestCase):
         self.assertEqual(trip.distance_m, 0)
         self.assertEqual(len(trip.path), 2)
 
-    def test_end_trip_prices_and_credits_campus(self):
+    def test_end_trip_prices_and_returns_drone(self):
         trip = self.svc.start_trip("r1", "tempe", 33.4242, -111.9281, at=MORNING)
         self.svc.add_points(trip.id, walk(33.4242, -111.9281, MORNING, steps=60))
         self.svc.end_trip(trip.id, at=MORNING + timedelta(minutes=10))
         self.assertEqual(trip.price_usd, 3.50)  # $1 + 10 x $0.25
-        self.assertEqual(trip.points, round(trip.shade_minutes * 10))
-        board = self.svc.leaderboard("shade")
-        self.assertEqual(board[0]["campus_id"], "tempe")
-        self.assertEqual(board[0]["rides"], 1)
         self.assertEqual(self.svc.drones[trip.drone_id].status, "available")
 
-    def test_campus_pass_rides_are_free_and_double_points(self):
+    def test_campus_pass_rides_under_20_min_are_free(self):
         trip = self.svc.start_trip("r1", "tempe", 33.4242, -111.9281, has_pass=True, at=MORNING)
         self.svc.add_points(trip.id, walk(33.4242, -111.9281, MORNING, steps=30))
         self.svc.end_trip(trip.id, at=MORNING + timedelta(minutes=5))
         self.assertEqual(trip.price_usd, 0.0)
-        self.assertEqual(trip.points, round(trip.shade_minutes * 20))
 
     def test_fleet_runs_out(self):
         for i in range(12):
@@ -125,8 +120,8 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(len(trip["path"]), 6)
         s, ended = self.call("POST", f"/v1/trips/{trip['trip_id']}/end")
         self.assertEqual(s, 200)
-        s, board = self.call("GET", "/v1/campuses/leaderboard?metric=km")
-        self.assertEqual(board["standings"][0]["campus_id"], "gainesville")
+        self.assertGreater(ended["price_usd"], 0)
+        self.assertEqual(len(ended["path"]), 6)
 
     def test_escort_needs_partner_key(self):
         s, err = self.call("POST", "/v1/escorts", {"rider_ref": "r", "campus_id": "tempe", "pickup": {"lat": 33.42, "lon": -111.93}})

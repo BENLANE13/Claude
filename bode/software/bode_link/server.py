@@ -4,7 +4,7 @@
     open http://localhost:8080/app/
 
 Rider endpoints:   POST /v1/trips, POST /v1/trips/{id}/points, POST /v1/trips/{id}/end, GET /v1/trips/{id}
-Campus Wars:       GET  /v1/campuses, GET /v1/campuses/leaderboard?metric=shade|km|per
+Campuses:          GET  /v1/campuses
 Partner endpoints: POST /v1/escorts, GET /v1/escorts/{id}, POST /v1/escorts/{id}/status, POST /v1/webhooks
                    (all need the X-Partner-Key header)
 Open data:         GET  /gbfs/gbfs.json and the feeds it lists
@@ -149,11 +149,9 @@ def make_handler(svc: FleetService):
                 raise FleetError(404, "not found")
             r = parts[1:]
 
-            # Campus Wars
+            # Campuses
             if method == "GET" and r == ["campuses"]:
                 return 200, {"campuses": [{"campus_id": c.id, "name": c.name, "lat": c.lat, "lon": c.lon} for c in svc.campuses.values()]}
-            if method == "GET" and r == ["campuses", "leaderboard"]:
-                return 200, {"metric": query.get("metric", "shade"), "standings": svc.leaderboard(query.get("metric", "shade"))}
 
             # Rider trips
             if method == "POST" and r == ["trips"]:

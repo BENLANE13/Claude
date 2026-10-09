@@ -20,13 +20,6 @@ main{position:relative;min-height:0}
 #map{position:absolute;inset:0}
 .panel{position:absolute;z-index:500;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));max-width:420px;background:var(--surface);border-radius:18px;
   box-shadow:0 10px 30px rgba(23,18,46,.18);padding:16px;display:grid;gap:12px}
-.board{position:absolute;z-index:500;right:12px;top:12px;width:280px;background:var(--surface);border-radius:16px;box-shadow:0 10px 30px rgba(23,18,46,.15);padding:12px 14px}
-.board h2{font:700 13px var(--display);margin:0 0 8px}
-.board ol{margin:0;padding-left:20px;display:grid;gap:4px;font-size:14px}
-.board li span{float:right;font:600 13px var(--mono)}
-.tabs{display:flex;gap:4px;margin-bottom:8px}
-.tabs button{flex:1;border:0;background:var(--bg);border-radius:8px;padding:6px;font:600 12px var(--body);cursor:pointer;color:var(--muted)}
-.tabs button[aria-pressed=true]{background:var(--violet);color:#fff}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .stats div{background:var(--bg);border-radius:10px;padding:8px 10px}
 .stats small{display:block;font:600 10px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
@@ -38,8 +31,7 @@ button:disabled{opacity:.5;cursor:default}
 #msg{font-size:14px;color:var(--muted);margin:0}
 .drone-pin{width:22px;height:22px;border-radius:50%;background:var(--violet);border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3)}
 .roost-pin{width:14px;height:14px;border-radius:4px;background:var(--ink);border:2px solid #fff}
-@media (max-width:640px){.board{left:12px;right:12px;width:auto;top:12px}.board ol{grid-template-columns:1fr}}
-</style>
+@media (max-width:640px){</style>
 </head>
 <body>
 <header>
@@ -48,16 +40,6 @@ button:disabled{opacity:.5;cursor:default}
 </header>
 <main>
   <div id="map" aria-label="Campus map"></div>
-
-  <aside class="board" aria-label="Campus Wars leaderboard">
-    <h2>Campus Wars</h2>
-    <div class="tabs" role="group" aria-label="Rank by">
-      <button data-m="shade" aria-pressed="true">Shade-min</button>
-      <button data-m="km" aria-pressed="false">km</button>
-      <button data-m="per" aria-pressed="false">Per 100</button>
-    </div>
-    <ol id="standings"></ol>
-  </aside>
 
   <section class="panel" aria-live="polite">
     <div class="stats">
@@ -110,7 +92,7 @@ async function loadCampuses() {
   campuses.forEach(c => $('campus').add(new Option(c.name, c.campus_id)));
   $('campus').onchange = () => { const c = current(); map.setView([c.lat, c.lon], 16); refreshFleet(); };
   map.setView([campuses[0].lat, campuses[0].lon], 16);
-  refreshFleet(); refreshBoard('shade');
+  refreshFleet();
   setInterval(refreshFleet, 10000);
 }
 const current = () => campuses.find(c => c.campus_id === $('campus').value) || campuses[0];
@@ -125,23 +107,6 @@ async function refreshFleet() {
         .bindTooltip(`${v.vehicle_id} · ${Math.round(v.current_fuel_percent * 100)}%`).addTo(fleetLayer));
   } catch { /* keep the last view */ }
 }
-
-async function refreshBoard(metric) {
-  try {
-    const { standings } = await api('/v1/campuses/leaderboard?metric=' + metric);
-    const ol = $('standings'); ol.innerHTML = '';
-    standings.forEach(s => {
-      const li = document.createElement('li');
-      li.textContent = s.name;
-      const v = document.createElement('span'); v.textContent = s.value.toLocaleString(); li.appendChild(v);
-      ol.appendChild(li);
-    });
-  } catch { /* offline */ }
-}
-document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
-  document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-pressed', x === b));
-  refreshBoard(b.dataset.m);
-});
 
 function position() {
   return new Promise(resolve => {
@@ -200,11 +165,11 @@ async function end() {
   try {
     const t = await api(`/v1/trips/${trip.trip_id}/end`, { method: 'POST' });
     show(t);
-    say(`Ride ended. ${t.points} points for ${current().name}. ${t.drone_id} is flying home to its Roost.`);
+    say(`Ride ended. You walked ${Math.round(t.distance_m)} m with ${t.shade_minutes.toFixed(1)} min in the shade. ${t.drone_id} is flying home to its Roost.`);
   } catch (e) { say(e.message); }
   trip = null; watchId = null;
   $('unlock').disabled = false; $('demo').disabled = false; $('end').disabled = true;
-  refreshFleet(); refreshBoard(document.querySelector('.tabs [aria-pressed=true]').dataset.m);
+  refreshFleet();
 }
 $('unlock').onclick = () => unlock(false);
 $('demo').onclick = () => unlock(true);

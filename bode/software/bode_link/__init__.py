@@ -1,4 +1,4 @@
-"""BODE Link: fleet, trips, Campus Wars, partner escorts, and GBFS feeds."""
+"""BODE Link: fleet, trips with path tracking, partner escorts, and GBFS feeds."""
 
 from .fleet import Campus, Drone, Escort, FleetError, FleetService, Roost, TrackPoint, Trip, demo_fleet, haversine_m
 

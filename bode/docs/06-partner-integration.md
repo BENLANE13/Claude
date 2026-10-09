@@ -14,7 +14,7 @@ BODE is built to complement scooter and bike apps, not compete with them. A scoo
 | `GET /v1/escorts/{id}` | Escort status |
 | `POST /v1/escorts/{id}/status` | Partner marks `arrived`, `shading`, or `cancelled` |
 | `POST /v1/webhooks` | Partner registers a URL for `escort.dispatched / shading / returned` events. The `returned` event includes the trip summary and the partner's 15% revenue share |
-| `GET /v1/campuses/leaderboard` | Partner apps can show Campus Wars standings |
+| `GET /v1/campuses` | Campuses where BODE operates |
 
 Partner calls need an `X-Partner-Key` header. Partners can only see their own escorts (tested).
 

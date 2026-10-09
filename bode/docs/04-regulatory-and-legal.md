@@ -19,7 +19,7 @@
 
 ## Privacy
 - Vision processing on-device only; no video stored or uploaded.
-- Route history: rider-deletable, retained 90 days by default, aggregated for Campus Wars.
+- Route history: rider-deletable, retained 90 days by default, used only for the rider's own receipts and history.
 - Privacy policy covering location data; CCPA/state-law compliance; FERPA does not apply (data isn't an education record), but avoid sharing data with universities at the individual level.
 
 ## Company setup

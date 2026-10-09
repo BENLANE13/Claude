@@ -10,17 +10,17 @@ BODE runs shared fleets of solar shade drones on hot college campuses. Riders un
 | **Problem** | Long, unshaded walks in extreme heat; umbrellas are impractical; fixed shade doesn't move |
 | **Customer** | Students at Sun Belt campuses (riders); universities (hosts and sponsors); event organizers |
 | **Unique value** | Hands-free shade that follows you and aims at the sun. The solar canopy gives about 4× normal drone flight time |
-| **Solution** | AI drone + solar canopy + Roost charging stations + rider app + Campus Wars |
-| **Channels** | Campus ambassadors, Campus Wars, university partnerships, scooter-app integrations (BODE Link) |
+| **Solution** | AI drone + solar canopy + Roost charging stations + rider app with walk maps |
+| **Channels** | Campus ambassadors, social video, university partnerships, scooter-app integrations (BODE Link) |
 | **Revenue** | $1 unlock + $0.25/min; $14.99/mo Campus Pass; campus sponsorships (~$25–35k/campus/yr); BODE for Teams |
 | **Costs** | Drones (~$1,100 falling to $700), Roosts, field ops, insurance, remote pilots, software |
 | **Key metrics** | Rides per drone per day, shade-minutes, drone payback days, incidents per 10k flight-hours |
-| **Unfair advantage** | Solar-shade control loop (provisional patent planned), FAA operational approvals, campus exclusivity, Campus Wars network effect |
+| **Unfair advantage** | Solar-shade control loop (provisional patent planned), FAA operational approvals, campus exclusivity |
 
 ## Business model (Lime-style)
 - Drones live on **Roosts**: solar perches with chargers, placed near libraries, unions, and rec centers.
 - Riders unlock in the app. The nearest drone launches, finds them, and shades them. When the ride ends it flies back to the nearest Roost.
-- Campus Pass riders get unlimited 20-minute rides and double Campus Wars points.
+- Campus Pass riders get unlimited 20-minute rides and priority unlocks during heat advisories.
 - Partners (scooter apps) book escorts through the BODE Link API and earn 15% of those rides.
 
 ## Unit economics (from `financials/model.py`)
@@ -41,7 +41,7 @@ Cumulative cash needed before profitability is about **$16M** (EBITDA plus fleet
 | Round | Amount | Use | Milestone |
 |---|---|---|---|
 | Pre-seed / Shark | $500k | 60-drone pilot fleet, FAA approvals, app | 1 campus live, 10k rides |
-| Seed | $3M | 3 campuses, Campus Wars season 1 | 100k rides, measured payback |
+| Seed | $3M | 3 campuses | 100k rides, measured payback |
 | Series A | $15M | 15 campuses, BODE for Teams | Contribution-positive campuses |
 
 ## Biggest risks and mitigations

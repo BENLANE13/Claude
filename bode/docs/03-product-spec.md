@@ -23,13 +23,13 @@ Run `python -m bode_shade --lat 33.45 --lon -112.07 --date 2026-07-15 --tz -7` f
 ## Software architecture
 ```
 Rider app (app/)  ──HTTP──▶  BODE Link API (software/bode_link)  ◀──  Partner apps (Lime-style)
-   │ map + GPS path              │ trips, Campus Wars, escorts           GBFS feeds, webhooks
+   │ map + GPS path              │ trips, path tracking, escorts         GBFS feeds, webhooks
    ▼                             ▼
 OpenStreetMap / Leaflet      Fleet service ──▶ Drone autopilot (future: PX4 + bode_shade on board)
 ```
 - `bode_shade`: sun position (NOAA), shade solver, energy model. Pure Python, tested.
-- `bode_link`: fleet, trips, path tracking and scoring, leaderboards, partner escorts, GBFS v3 feeds, HTTP server.
-- `app/`: rider web app with a live map, unlock flow, GPS path, and leaderboard.
+- `bode_link`: fleet, trips, path tracking (distance and shade-minutes), partner escorts, GBFS v3 feeds, HTTP server.
+- `app/`: rider web app with a live map, unlock flow, GPS path, and ride summary.
 
 ## Next engineering milestones
 1. Port the shade solver to the flight controller (PX4 offboard mode, 20 Hz).

@@ -1,4 +1,4 @@
-"""Fleet, trips, Campus Wars scoring, and partner escorts. Pure logic, no I/O.
+"""Fleet, trips with path tracking, and partner escorts. Pure logic, no I/O.
 
 The HTTP layer in server.py is a thin wrapper around FleetService so the
 same rules can later move behind a real database without changing tests.
@@ -17,9 +17,7 @@ EARTH_RADIUS_M = 6_371_000.0
 UNLOCK_FEE = 1.00
 PER_MINUTE = 0.25
 MIN_SHADE_ELEVATION_DEG = 8.0
-MAX_WALKING_SPEED_MPS = 6.0  # faster than this between points = GPS jump or vehicle; not scored
-POINTS_PER_SHADE_MIN = 10
-PASS_MULTIPLIER = 2
+MAX_WALKING_SPEED_MPS = 6.0  # faster than this between points = GPS jump or vehicle; not counted
 PARTNER_REV_SHARE = 0.15
 
 
@@ -44,10 +42,6 @@ class Campus:
     name: str
     lat: float
     lon: float
-    students: int
-    shade_minutes: float = 0.0
-    distance_m: float = 0.0
-    rides: int = 0
 
 
 @dataclass
@@ -92,7 +86,6 @@ class Trip:
     shade_minutes: float = 0.0
     ended_at: datetime | None = None
     price_usd: float | None = None
-    points: int = 0
 
     def summary(self) -> dict:
         return {
@@ -105,7 +98,6 @@ class Trip:
             "ended_at": self.ended_at.isoformat() if self.ended_at else None,
             "distance_m": round(self.distance_m, 1),
             "shade_minutes": round(self.shade_minutes, 2),
-            "points": self.points,
             "price_usd": self.price_usd,
             "path": [[p.lat, p.lon] for p in self.path],
         }
@@ -189,7 +181,7 @@ class FleetService:
         return trip
 
     def add_points(self, trip_id: str, points: list[TrackPoint]) -> Trip:
-        """Append GPS points to a trip's path, scoring distance and shade-minutes."""
+        """Append GPS points to a trip's path, adding up distance and shade-minutes."""
         trip = self._trip(trip_id)
         if trip.ended_at:
             raise FleetError(409, "trip already ended")
@@ -217,12 +209,6 @@ class FleetService:
         trip.ended_at = at or _now()
         minutes = max(1, math.ceil((trip.ended_at - trip.started_at).total_seconds() / 60))
         trip.price_usd = 0.0 if trip.has_pass and minutes <= 20 else round(UNLOCK_FEE + PER_MINUTE * minutes, 2)
-        trip.points = round(trip.shade_minutes * POINTS_PER_SHADE_MIN * (PASS_MULTIPLIER if trip.has_pass else 1))
-
-        campus = self.campuses[trip.campus_id]
-        campus.shade_minutes += trip.shade_minutes
-        campus.distance_m += trip.distance_m
-        campus.rides += 1
 
         drone = self.drones[trip.drone_id]
         drone.status = "returning"
@@ -235,25 +221,6 @@ class FleetService:
                 escort.status = "returned"
                 self._emit(escort, extra={"trip": trip.summary(), "partner_share_usd": round((trip.price_usd or 0) * PARTNER_REV_SHARE, 2)})
         return trip
-
-    # --- Campus Wars -------------------------------------------------------------
-
-    def leaderboard(self, metric: str = "shade") -> list[dict]:
-        def value(c: Campus) -> float:
-            if metric == "shade":
-                return c.shade_minutes
-            if metric == "km":
-                return c.distance_m / 1000
-            if metric == "per":
-                return c.shade_minutes / c.students * 100 if c.students else 0.0
-            raise FleetError(400, "metric must be shade, km, or per")
-
-        ranked = sorted(self.campuses.values(), key=value, reverse=True)
-        return [
-            {"rank": i + 1, "campus_id": c.id, "name": c.name, "value": round(value(c), 2),
-             "shade_minutes": round(c.shade_minutes, 1), "km": round(c.distance_m / 1000, 2), "rides": c.rides}
-            for i, c in enumerate(ranked)
-        ]
 
     # --- Partner escorts (BODE Link) ----------------------------------------------
 
@@ -344,9 +311,9 @@ def demo_fleet() -> FleetService:
     """Three pilot campuses with Roosts, for local development and the rider app demo."""
     svc = FleetService()
     campuses = [
-        Campus("tempe", "Tempe pilot campus", 33.4242, -111.9281, 57_000),
-        Campus("austin", "Austin pilot campus", 30.2849, -97.7341, 52_000),
-        Campus("gainesville", "Gainesville pilot campus", 29.6436, -82.3549, 55_000),
+        Campus("tempe", "Tempe pilot campus", 33.4242, -111.9281),
+        Campus("austin", "Austin pilot campus", 30.2849, -97.7341),
+        Campus("gainesville", "Gainesville pilot campus", 29.6436, -82.3549),
     ]
     offsets = [(0.0015, -0.002, "Library Roost"), (-0.002, 0.0012, "Union Roost"), (0.0005, 0.003, "Rec Center Roost")]
     for c in campuses:

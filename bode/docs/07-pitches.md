@@ -2,7 +2,7 @@
 
 ## Elevator pitch (30 seconds)
 
-> Every summer, millions of students walk across campuses that hit 105°F, with no shade and nowhere to hide. **BODE is shade that follows you.** Open the app, unlock a BODE, and a solar-powered drone flies to you and holds the exact angle between you and the sun the whole way to class. Its canopy is a solar panel, so the angle that shades you is the angle that charges it. That gets us four times the flight time of a normal drone. It works like Lime: $1 to unlock, 25 cents a minute. Every shaded minute scores points for your school in Campus Wars. We're launching on three Sun Belt campuses next fall, and we're raising a seed round to build the first 180 drones.
+> Every summer, millions of students walk across campuses that hit 105°F, with no shade and nowhere to hide. **BODE is shade that follows you.** Open the app, unlock a BODE, and a solar-powered drone flies to you and holds the exact angle between you and the sun the whole way to class. Its canopy is a solar panel, so the angle that shades you is the angle that charges it. That gets us four times the flight time of a normal drone. It works like Lime: $1 to unlock, 25 cents a minute. We're launching on three Sun Belt campuses next fall, and we're raising a seed round to build the first 180 drones.
 
 **10-second version:** "BODE is Lime for shade: solar drones that follow you across campus and keep you out of the sun."
 
@@ -36,15 +36,13 @@
 
 > We don't sell BODE to consumers. We run it like Lime. Drones sit on solar "Roosts" around campus. You unlock one in the app for a dollar plus 25 cents a minute, or get unlimited rides with a $14.99 Campus Pass. When you're done, it flies itself home. Nothing gets left on the sidewalk.
 >
-> Students compete in **Campus Wars**. Every shaded step you walk gets mapped and scored for your school, and the top campus wins the Golden Canopy each semester. That turns every rider into a marketer.
->
 > We also plug into scooter apps through open standards, so a rider can park a scooter and have a BODE meet them for the walk to class. The partner gets a cut.
 
 ### Numbers
 
 > Each drone costs about $1,100 to build today, dropping to $700 at volume. In our model a drone earns back its cost in about 115 days in year one and 65 days by year two, at a 57 to 64% contribution margin. We plan 3 campuses next year, 15 the year after, and 45 in year three. That's about $11 million in revenue in year three.
 >
-> Your $500,000 builds our first 60-drone pilot fleet, gets FAA approvals, and launches Campus Wars on our first campus.
+> Your $500,000 builds our first 60-drone pilot fleet, gets FAA approvals, and launches on our first campus.
 >
 > So, Sharks: who wants to get out of the sun?
 
@@ -60,7 +58,7 @@
 > You're right, and we don't claim it does. Solar covers about 75% of hover power at midday. The rest comes from the battery, which is why rides last up to 80 minutes instead of 20. The Roosts handle full recharging in the sun between rides.
 
 **"Why won't DJI or Lime just copy you?"**
-> DJI sells hardware; they don't run fleets on campuses. Lime has never run aircraft, and aviation operations, FAA approvals, and university contracts are slow to build. We'll have campus exclusivity agreements and the Campus Wars network effect first. We're also filing a provisional patent on coupling shade geometry with the solar-tracking control loop.
+> DJI sells hardware; they don't run fleets on campuses. Lime has never run aircraft, and aviation operations, FAA approvals, and university contracts are slow to build. We'll have campus exclusivity agreements and riders' habits first. We're also filing a provisional patent on coupling shade geometry with the solar-tracking control loop.
 
 **"What about wind? Rain? Winter?"**
 > BODE stays on its Roost above about 20 mph winds and in rain or lightning. That's why we launch in the Sun Belt, where there are 200+ shade-worthy days a year. In off-months, fleets move to events: graduations, football tailgates, and outdoor festivals, sold through BODE for Teams.
