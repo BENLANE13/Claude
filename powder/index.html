@@ -26,7 +26,7 @@ kbd { background: rgba(255,255,255,.15); border-radius: 5px; padding: 1px 6px; }
 <div class="hud"><div><small>DISTANCE</small><b id="score">0 m</b></div><div style="text-align:right"><small>BEST</small><b id="best">0 m</b></div></div>
 <div class="screen" id="start"><div class="card">
   <h1>Treeline Run</h1>
-  <p>Carve down the mountain. Dodge trees and rocks. The longer you ride, the faster it gets and the higher your score.</p>
+  <p>Ride a saucer sled straight down the mountain. Dodge trees and rocks. The longer you ride, the faster it gets and the higher your score.</p>
   <p><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd> to steer · on a phone, hold the left or right side of the screen</p>
   <button id="go">Drop in</button>
 </div></div>
@@ -44,11 +44,9 @@ const cv = document.getElementById("c"), g = cv.getContext("2d");
 let W, H, dpr;
 function size() { dpr = devicePixelRatio || 1; W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0); }
 addEventListener("resize", size); size();
-
 let best = 0; try { best = +localStorage.getItem("treeline-best") || 0; } catch (e) {}
 const $ = id => document.getElementById(id);
 $("best").textContent = best + " m";
-
 const keys = { l: false, r: false };
 addEventListener("keydown", e => { if (["ArrowLeft", "a", "A"].includes(e.key)) keys.l = true; if (["ArrowRight", "d", "D"].includes(e.key)) keys.r = true;
   if ((e.key === " " || e.key === "Enter") && !running) { e.preventDefault(); start(); } });
@@ -59,52 +57,50 @@ cv.addEventListener("pointerdown", e => { touches.set(e.pointerId, e.clientX); s
 cv.addEventListener("pointermove", e => { if (touches.has(e.pointerId)) { touches.set(e.pointerId, e.clientX); syncTouch(); } });
 ["pointerup", "pointercancel", "pointerleave"].forEach(t => cv.addEventListener(t, e => { touches.delete(e.pointerId); syncTouch(); }));
 
-let running = false, obs, trail, flakes, px, vx, speed, dist, last, spawnY, shake;
+const FAR = 1400, CAMH = 14, LANE = 260;   // world units
+let running = false, obs, flakes, camX, vx, speed, dist, last, spawnZ, shake, spin, t0 = 0;
+const horizon = () => H * .36;
+const focal = () => Math.min(W, H * 1.2) * .9;
+function proj(x, z) { const f = focal() / z; return { x: W / 2 + (x - camX) * f, y: horizon() + CAMH * f, k: f }; }
 function reset() {
-  obs = []; trail = []; px = W / 2; vx = 0; speed = 220; dist = 0; spawnY = 0; shake = 0;
-  flakes = Array.from({ length: 70 }, () => ({ x: Math.random() * W, y: Math.random() * H, r: Math.random() * 2 + .5 }));
-  for (let y = H * .55; y < H + 200; y += 60) spawnRow(y, true);
+  obs = []; camX = 0; vx = 0; speed = 160; dist = 0; spawnZ = 0; shake = 0; spin = 0;
+  flakes = Array.from({ length: 90 }, () => ({ x: Math.random() * 2 - 1, y: Math.random() * 2 - 1, z: Math.random() }));
+  for (let z = 300; z < FAR; z += 45) spawnRow(z, true);
 }
-function spawnRow(y, easy) {
-  const n = easy ? 1 : 1 + Math.floor(Math.random() * (2 + dist / 600));
+function spawnRow(z, easy) {
+  const n = easy ? 1 : 1 + Math.floor(Math.random() * (2 + dist / 500));
   for (let i = 0; i < n; i++) {
-    const roll = Math.random();
-    const type = roll < .62 ? "tree" : roll < .9 ? "rock" : "bump";
-    const s = type === "tree" ? 18 + Math.random() * 14 : type === "rock" ? 12 + Math.random() * 12 : 16;
-    obs.push({ x: Math.random() * W, y: y + Math.random() * 40, type, s, seed: Math.random() });
+    const r = Math.random(), type = r < .65 ? "tree" : r < .92 ? "rock" : "bump";
+    obs.push({ x: camX + (Math.random() * 2 - 1) * LANE, z: z + Math.random() * 30, type, s: type === "tree" ? 9 + Math.random() * 7 : type === "rock" ? 4 + Math.random() * 4 : 6, seed: Math.random() });
   }
+  // keep the edges lined with forest
+  if (Math.random() < .8) obs.push({ x: camX + (Math.random() < .5 ? -1 : 1) * (LANE + 40 + Math.random() * 200), z, type: "tree", s: 12 + Math.random() * 8 });
 }
 function start() { reset(); running = true; $("start").hidden = true; $("over").hidden = true; last = performance.now(); requestAnimationFrame(loop); }
 $("go").onclick = start; $("again").onclick = start;
-
-const riderY = () => H * .3;
 function loop(t) {
-  const dt = Math.min(.035, (t - last) / 1000); last = t;
+  const dt = Math.min(.035, (t - last) / 1000); last = t; t0 = t;
   if (running) update(dt);
   draw();
   if (running || shake > 0) requestAnimationFrame(loop);
 }
 function update(dt) {
-  speed = Math.min(900, 220 + dist * .55);
+  speed = Math.min(620, 160 + dist * .45);
   const steer = (keys.r ? 1 : 0) - (keys.l ? 1 : 0);
-  vx += steer * 1700 * dt; vx *= Math.pow(.02, dt); vx = Math.max(-420, Math.min(420, vx));
-  px = Math.max(14, Math.min(W - 14, px + vx * dt));
-  const dy = speed * dt;
-  dist += dy / 10;
-  obs.forEach(o => o.y -= dy); trail.forEach(p => p.y -= dy);
-  obs = obs.filter(o => o.y > -60); trail = trail.filter(p => p.y > -20);
-  trail.push({ x: px, y: riderY() + 10 });
-  spawnY -= dy;
-  const gap = Math.max(34, 90 - dist / 40);
-  while (spawnY < 0) { spawnRow(H + 60, false); spawnY += gap; }
-  flakes.forEach(f => { f.y -= dy * .25; f.x += Math.sin(f.y / 40) * .3; if (f.y < 0) { f.y = H; f.x = Math.random() * W; } });
+  vx += steer * 520 * dt; vx *= Math.pow(.08, dt); vx = Math.max(-150, Math.min(150, vx));
+  camX += vx * dt;
+  spin += (vx / 150) * dt * 1.5 + dt * .4;     // saucer slowly rotates
+  const dz = speed * dt; dist += dz / 8;
+  obs.forEach(o => o.z -= dz); obs = obs.filter(o => o.z > 2);
+  spawnZ -= dz; const gap = Math.max(16, 55 - dist / 50);
+  while (spawnZ < 0) { spawnRow(FAR, false); spawnZ += gap; }
+  flakes.forEach(f => { f.z -= dt * (speed / 500); if (f.z < .05) { f.z = 1; f.x = Math.random() * 2 - 1; f.y = Math.random() * 2 - 1; } });
   for (const o of obs) {
-    if (o.type === "bump") continue;
-    const hitR = o.type === "tree" ? o.s * .45 : o.s * .8;
-    const oy = o.type === "tree" ? o.y + o.s * .6 : o.y;
-    if (Math.hypot(o.x - px, oy - riderY()) < hitR + 8) return crash(o.type);
+    if (o.z > 14 || o.z < 4) continue;
+    const dx = Math.abs(o.x - camX);
+    if (o.type === "bump") { if (dx < 8) dist += 2; continue; }
+    if (dx < (o.type === "tree" ? o.s * .35 : o.s * .9) + 4) return crash(o.type);
   }
-  for (const o of obs) if (o.type === "bump" && Math.abs(o.x - px) < 18 && Math.abs(o.y - riderY()) < 8) dist += 5;
   $("score").textContent = Math.floor(dist) + " m";
 }
 function crash(type) {
@@ -113,50 +109,85 @@ function crash(type) {
   if (nb) { best = d; try { localStorage.setItem("treeline-best", best); } catch (e) {} }
   $("best").textContent = best + " m";
   $("crashTitle").textContent = type === "tree" ? "Tree hugger!" : "Rocked!";
-  $("crashWhy").textContent = type === "tree" ? "You clipped a pine." : "You found a rock under the powder.";
+  $("crashWhy").textContent = type === "tree" ? "Your sled met a pine." : "You found a rock under the powder.";
   $("final").textContent = d + " m";
   $("bestLine").textContent = nb ? "New personal best!" : `Best: ${best} m`;
   setTimeout(() => { $("over").hidden = false; $("again").focus(); }, 450);
 }
 function draw() {
   let sx = 0, sy = 0;
-  if (shake > 0) { sx = (Math.random() - .5) * 14 * shake; sy = (Math.random() - .5) * 14 * shake; shake = Math.max(0, shake - .04); }
-  g.save(); g.translate(sx, sy);
-  const grd = g.createLinearGradient(0, 0, 0, H); grd.addColorStop(0, "#eef6ff"); grd.addColorStop(1, "#d6e8ff");
-  g.fillStyle = grd; g.fillRect(-20, -20, W + 40, H + 40);
-  g.strokeStyle = "rgba(94,160,242,.45)"; g.lineWidth = 3; g.beginPath();
-  trail.forEach((p, i) => i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y)); g.stroke();
-  [...obs].sort((a, b) => a.y - b.y).forEach(drawObs);
-  drawRider();
-  g.fillStyle = "rgba(255,255,255,.9)"; flakes.forEach(f => { g.beginPath(); g.arc(f.x, f.y, f.r, 0, 7); g.fill(); });
+  if (shake > 0) { sx = (Math.random() - .5) * 24 * shake; sy = (Math.random() - .5) * 24 * shake; shake = Math.max(0, shake - .03); }
+  const roll = -vx / 1400, bob = running ? Math.sin(t0 / 90) * Math.min(3, speed / 150) : 0;
+  g.save(); g.translate(W / 2 + sx, H / 2 + sy + bob); g.rotate(roll); g.translate(-W / 2, -H / 2);
+  const hz = horizon();
+  // sky
+  let gr = g.createLinearGradient(0, -100, 0, hz); gr.addColorStop(0, "#0b3b8c"); gr.addColorStop(1, "#8fc1ff");
+  g.fillStyle = gr; g.fillRect(-W, -H, W * 3, hz + H);
+  // distant peaks (parallax with steering)
+  const par = -camX * .15;
+  [["#9cc2f5", .55, 0], ["#5b93ea", .35, 300]].forEach(([c, hgt, off]) => {
+    g.fillStyle = c; g.beginPath(); g.moveTo(-W, hz);
+    for (let x = -W; x <= W * 2; x += 60) { const n = Math.sin((x + par + off) / 140) * .5 + Math.sin((x + par + off) / 53) * .3; g.lineTo(x, hz - (60 + n * 50) * hgt * (H / 600)); }
+    g.lineTo(W * 2, hz); g.fill();
+  });
+  // snow slope
+  gr = g.createLinearGradient(0, hz, 0, H); gr.addColorStop(0, "#cfe3fb"); gr.addColorStop(1, "#ffffff");
+  g.fillStyle = gr; g.fillRect(-W, hz, W * 3, H * 2);
+  // moving grooming lines show speed
+  g.strokeStyle = "rgba(94,160,242,.18)"; g.lineWidth = 2;
+  const step = 40, off = (dist * 8) % step;
+  for (let z = step - off; z < FAR; z += step) { const p = proj(0, z); if (p.y > H + 40) continue; g.globalAlpha = Math.min(1, 300 / z); g.beginPath(); g.moveTo(-W, p.y); g.lineTo(W * 2, p.y); g.stroke(); }
+  g.globalAlpha = 1;
+  for (let lx = -3; lx <= 3; lx++) { const a = proj(camX + lx * 120 - ((camX % 120) + 120) % 120, 4), b = proj(camX + lx * 120 - ((camX % 120) + 120) % 120, FAR); g.strokeStyle = "rgba(94,160,242,.10)"; g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke(); }
+  // obstacles far to near
+  [...obs].sort((a, b) => b.z - a.z).forEach(o => { const p = proj(o.x, o.z); if (p.x < -400 || p.x > W + 400) return; g.globalAlpha = Math.min(1, (FAR - o.z) / 250); drawObs(o, p); });
+  g.globalAlpha = 1;
+  // snow flying past
+  g.fillStyle = "rgba(255,255,255,.9)";
+  flakes.forEach(f => { const k = 1 / f.z; const x = W / 2 + f.x * W * .5 * k, y = H * .45 + f.y * H * .5 * k; if (x < -20 || x > W + 20 || y < -20 || y > H + 20) return; g.beginPath(); g.arc(x, y, Math.min(5, .8 * k), 0, 7); g.fill(); });
   g.restore();
+  drawSled();
 }
-function drawObs(o) {
-  const { x, y, s } = o;
+function drawObs(o, p) {
+  const k = p.k, x = p.x, y = p.y;
   if (o.type === "tree") {
-    g.fillStyle = "rgba(11,59,140,.15)"; g.beginPath(); g.ellipse(x + 6, y + s * .7, s * .55, s * .18, 0, 0, 7); g.fill();
-    g.fillStyle = "#6b4a2b"; g.fillRect(x - 3, y + s * .35, 6, s * .35);
-    for (let k = 0; k < 3; k++) { const w = s * (.75 - k * .18), top = y - s * .9 + k * s * .32;
-      g.fillStyle = k % 2 ? "#14603e" : "#0f4f33"; g.beginPath(); g.moveTo(x, top - s * .15); g.lineTo(x + w, top + s * .55); g.lineTo(x - w, top + s * .55); g.fill();
-      g.fillStyle = "#fff"; g.beginPath(); g.moveTo(x, top - s * .15); g.lineTo(x + w * .35, top + s * .1); g.lineTo(x - w * .35, top + s * .1); g.fill(); }
+    const h = o.s * 3.2 * k, w = o.s * 1.1 * k;
+    g.fillStyle = "rgba(11,59,140,.18)"; g.beginPath(); g.ellipse(x, y, w * .9, w * .2, 0, 0, 7); g.fill();
+    g.fillStyle = "#5b3d22"; g.fillRect(x - w * .1, y - h * .2, w * .2, h * .2);
+    for (let i = 0; i < 3; i++) { const top = y - h * (1 - i * .25), ww = w * (.55 + i * .22), bot = top + h * .42;
+      g.fillStyle = i % 2 ? "#14603e" : "#0f4f33"; g.beginPath(); g.moveTo(x, top); g.lineTo(x + ww, bot); g.lineTo(x - ww, bot); g.fill();
+      g.fillStyle = "#f4f9ff"; g.beginPath(); g.moveTo(x, top); g.lineTo(x + ww * .4, top + h * .14); g.lineTo(x - ww * .4, top + h * .14); g.fill(); }
   } else if (o.type === "rock") {
-    g.fillStyle = "#5e6b7d"; g.beginPath(); g.moveTo(x - s, y + s * .4); g.lineTo(x - s * .6, y - s * .5); g.lineTo(x + s * .2, y - s * .7); g.lineTo(x + s, y - s * .1); g.lineTo(x + s * .8, y + s * .45); g.closePath(); g.fill();
-    g.fillStyle = "#8a96a8"; g.beginPath(); g.moveTo(x - s * .6, y - s * .5); g.lineTo(x + s * .2, y - s * .7); g.lineTo(x, y - s * .1); g.fill();
-    g.fillStyle = "#fff"; g.beginPath(); g.ellipse(x - s * .1, y - s * .55, s * .35, s * .12, -.2, 0, 7); g.fill();
+    const s = o.s * k;
+    g.fillStyle = "#5e6b7d"; g.beginPath(); g.moveTo(x - s * 1.3, y); g.lineTo(x - s, y - s * .9); g.lineTo(x + s * .2, y - s * 1.3); g.lineTo(x + s * 1.2, y - s * .6); g.lineTo(x + s * 1.4, y); g.closePath(); g.fill();
+    g.fillStyle = "#8a96a8"; g.beginPath(); g.moveTo(x - s, y - s * .9); g.lineTo(x + s * .2, y - s * 1.3); g.lineTo(x, y - s * .4); g.fill();
+    g.fillStyle = "#fff"; g.beginPath(); g.ellipse(x - s * .2, y - s * 1.05, s * .6, s * .2, -.2, 0, 7); g.fill();
   } else {
-    g.fillStyle = "rgba(255,255,255,.95)"; g.beginPath(); g.ellipse(x, y, s * 1.2, s * .45, 0, 0, 7); g.fill();
-    g.strokeStyle = "rgba(94,160,242,.4)"; g.lineWidth = 2; g.stroke();
+    g.fillStyle = "rgba(255,255,255,.95)"; g.beginPath(); g.ellipse(x, y, o.s * 1.6 * k, o.s * .35 * k, 0, 0, 7); g.fill();
+    g.strokeStyle = "rgba(94,160,242,.45)"; g.lineWidth = 2; g.stroke();
   }
 }
-function drawRider() {
-  const x = px, y = riderY(), tilt = vx / 900;
-  g.save(); g.translate(x, y); g.rotate(tilt);
-  g.fillStyle = "#0b3b8c"; g.beginPath(); g.roundRect ? g.roundRect(-16, 4, 32, 9, 5) : g.rect(-16, 4, 32, 9); g.fill();
-  g.fillStyle = "#1463f3"; g.beginPath(); g.ellipse(0, -4, 8, 10, 0, 0, 7); g.fill();
-  g.fillStyle = "#ffd38a"; g.beginPath(); g.arc(0, -16, 6, 0, 7); g.fill();
-  g.fillStyle = "#ff6b5e"; g.fillRect(-6, -21, 12, 4);
+function drawSled() {
+  const cx = W / 2 + vx * .25, cy = H + H * .08, rx = Math.min(W * .62, H * .75), ry = rx * .42, tilt = vx / 900;
+  g.save(); g.translate(cx, cy); g.rotate(tilt);
+  // saucer body
+  let gr = g.createRadialGradient(0, -ry * .3, ry * .2, 0, 0, rx); gr.addColorStop(0, "#ff8a7e"); gr.addColorStop(1, "#c9362d");
+  g.fillStyle = gr; g.beginPath(); g.ellipse(0, 0, rx, ry, 0, 0, 7); g.fill();
+  // rim + rotating stripes so you feel the spin
+  g.lineWidth = Math.max(6, rx * .05); g.strokeStyle = "#e9eef5"; g.beginPath(); g.ellipse(0, 0, rx * .97, ry * .95, 0, 0, 7); g.stroke();
+  g.strokeStyle = "rgba(255,255,255,.35)"; g.lineWidth = Math.max(3, rx * .02);
+  for (let i = 0; i < 6; i++) { const a = spin + i * Math.PI / 3; g.beginPath(); g.moveTo(Math.cos(a) * rx * .35, Math.sin(a) * ry * .35); g.lineTo(Math.cos(a) * rx * .85, Math.sin(a) * ry * .85); g.stroke(); }
+  g.fillStyle = "rgba(0,0,0,.15)"; g.beginPath(); g.ellipse(0, ry * .1, rx * .45, ry * .4, 0, 0, 7); g.fill();
+  // mittens gripping the handles
+  [-1, 1].forEach(sd => { const hx = sd * rx * .72, hy = -ry * .55;
+    g.fillStyle = "#1a1a1a"; g.fillRect(hx - rx * .07, hy - 4, rx * .14, 8);
+    g.fillStyle = "#1463f3"; g.beginPath(); g.ellipse(hx, hy - 6, rx * .085, ry * .16, sd * .4, 0, 7); g.fill();
+    g.fillStyle = "#0b3b8c"; g.beginPath(); g.ellipse(hx - sd * rx * .06, hy - 12, rx * .03, ry * .07, sd * .8, 0, 7); g.fill();
+    g.fillStyle = "#e9eef5"; g.fillRect(hx - rx * .07, hy + ry * .05, rx * .14, ry * .06); });
+  // boots
+  [-1, 1].forEach(sd => { g.fillStyle = "#2a2f3a"; g.beginPath(); g.ellipse(sd * rx * .2, -ry * .62, rx * .07, ry * .12, sd * .2, 0, 7); g.fill(); });
   g.restore();
 }
-draw();
+reset(); draw();
 })();
 </script>
