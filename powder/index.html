@@ -41,6 +41,20 @@ kbd { background: rgba(255,255,255,.15); border-radius: 5px; padding: 1px 6px; }
 .strava .foot { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; padding: 12px 18px 16px; }
 .strava .foot span { color: #6d6d78; font-size: 13px; }
 .strava button { background: var(--strava); color: #fff; margin: 0; }
+canvas#c { cursor: crosshair; }
+.hpbox { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(14px + env(safe-area-inset-bottom, 0px)); width: min(260px, 58vw); background: var(--panel); border-radius: 12px; padding: 8px 12px; pointer-events: none; }
+.hpbox .row { display: flex; justify-content: space-between; align-items: baseline; }
+.hpbox small { font-size: 10px; letter-spacing: .14em; color: var(--ice); }
+.hpbox b { font-family: var(--f-display); font-weight: 400; font-size: 20px; font-variant-numeric: tabular-nums; }
+.hpbar { height: 10px; border-radius: 99px; background: rgba(255,255,255,.15); overflow: hidden; margin: 4px 0 6px; }
+.hpbar i { display: block; height: 100%; width: 100%; background: #43d17a; transition: width .15s, background .15s; }
+.row2 { display: flex; gap: 14px; font-size: 12px; color: var(--ice); }
+.row2 b { font-family: var(--f-mono); font-size: 13px; color: #fff; }
+.feed { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); top: calc(76px + env(safe-area-inset-top, 0px)); display: grid; gap: 4px; justify-items: end; pointer-events: none; font-size: 12px; max-width: 70vw; }
+.feed div { background: var(--panel); padding: 4px 10px; border-radius: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.feed div.me { border: 1px solid var(--gold); color: var(--gold); }
+.fire { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); width: 86px; height: 86px; border-radius: 50%; margin: 0; padding: 0; background: rgba(201,54,45,.92); color: #fff; font-family: var(--f-display); font-weight: 400; font-size: 18px; display: none; touch-action: none; box-shadow: 0 6px 20px rgba(4,21,48,.4); }
+@media (pointer: coarse) { .fire { display: grid; place-items: center; } }
 .toast { position: fixed; left: 50%; top: 32%; transform: translate(-50%, -50%); font-family: var(--f-display); font-size: clamp(22px, 6vw, 40px); color: #fff; text-shadow: 0 3px 0 #0b3b8c, 0 0 18px rgba(4,21,48,.6); pointer-events: none; white-space: nowrap; transition: opacity .3s; }
 </style>
 
@@ -51,11 +65,15 @@ kbd { background: rgba(255,255,255,.15); border-radius: 5px; padding: 1px 6px; }
   <div class="box" style="text-align:right"><small>CHIPS · BEST</small><b class="chips"><span id="chips" style="color:#7cc4ff">0</span><span style="opacity:.5">·</span><span id="best">0 m</span></b></div>
 </div>
 <div class="toast" id="toast" style="opacity:0"></div>
+<div class="hpbox"><div class="row"><small>HEALTH</small><b id="hpNum">100</b></div><div class="hpbar"><i id="hpBar"></i></div><div class="row2"><span>ALIVE <b id="alive">12</b></span><span>ELIMS <b id="elims">0</b></span></div></div>
+<div class="feed" id="feed" aria-live="polite"></div>
+<button class="fire" id="fireBtn" aria-label="Fire">FIRE</button>
 
 <div class="screen" id="start"><div class="card">
   <h1>Kaspen</h1>
   <p>Shred the open mountain. Carve fresh powder under the gondola lines, hit kickers to land on the cables and ride them like a zipline, and collect the letters of <b style="color:var(--gold)">KAPPA ALPHA ORDER</b> in order to unlock the chest. Grab blue chips along the way.</p>
-  <p><kbd>←</kbd> <kbd>→</kbd> carve · <kbd>Space</kbd> jump / hop off the cable<br>Phone: hold left or right side to carve, tap or swipe up to jump</p>
+  <p><b style="color:#fff">11 AI riders drop in with you.</b> Everyone has 100 health and a blaster. Trees block shots, hot cocoa heals, and the last rider standing wins.</p>
+  <p><kbd>←</kbd> <kbd>→</kbd> carve · <kbd>Space</kbd> jump / hop off the cable · aim with the mouse, click or hold <kbd>F</kbd> to fire<br>Phone: hold left or right side to carve, tap or swipe up to jump, hold FIRE to shoot (auto-aim)</p>
   <button id="go">Drop in</button>
 </div></div>
 <div class="screen" id="over" hidden><div class="card strava">
@@ -90,6 +108,13 @@ const FAR = 1500, CAMH = 12, SLOPE = .15, PZ = 55, GRAV = 210, JUMPV = 92, FIELD
 const CABH = 46, KICK = { h: 8, len: 26, w: 26, v: 150 };
 let running = false, t0 = 0, last;
 let obs, decor, chips, cables, parts, trail, track, li, letterOut, chestOut, nChips, nChests, px, pvx, py, pv, camX, camY, speed, dist, time, topSpeed, onCable, cableCool, spinA, grab, shake, spawnZ, decorZ, cableZ, toastT;
+let bots, shots, dmgPops, hp, kills, dmgDealt, placed, won, hitCool, hitFlash, fireCd, firing = false, fireFlash, aimX = null, aimY = null, lockBot, killMarks;
+const isTouch = matchMedia("(pointer: coarse)").matches;
+const KIT_ME = { main: "#8c1d2c", dark: "#6e1522", pants: "#2b3a2f", acc: "#d8b45a", logo: "ΚΑ" };
+const NAMES = ["FrostByte", "PowPowPete", "SlushPuppy", "GnarlyGrace", "YardSaleYuri", "TreeWellTom", "IcyIsla", "SendItSam", "CorduroyKai", "ButterBen", "ApresAva"];
+const KITS = [["#e8742a", "#a8501a", "#1d2433", "#f2f2f2", "★"], ["#1aa39a", "#127069", "#2d2d38", "#ffd166", "⚡"], ["#6c4ad6", "#4b3299", "#2b3a2f", "#7cf3ff", "☾"], ["#2f9e44", "#1f6e2f", "#3a3f4b", "#ffe066", "♣"],
+  ["#e64980", "#a3305b", "#22252e", "#ffffff", "♥"], ["#f59f00", "#b07200", "#26303f", "#1d2433", "◆"], ["#4dabf7", "#2a78b8", "#2c2f36", "#ff6b6b", "✦"], ["#495057", "#2f343a", "#1a1d22", "#ff922b", "✕"],
+  ["#c2255c", "#861a40", "#343a40", "#ffd8a8", "☀"], ["#f8f9fa", "#adb5bd", "#212529", "#1463f3", "❄"], ["#0ca678", "#08714f", "#1d2433", "#e599f7", "♠"]].map(([main, dark, pants, acc, logo]) => ({ main, dark, pants, acc, logo }));
 
 // controls
 const keys = { l: false, r: false };
@@ -99,13 +124,17 @@ addEventListener("keydown", e => {
   if (["ArrowLeft", "a", "A"].includes(e.key)) keys.l = true;
   if (["ArrowRight", "d", "D"].includes(e.key)) keys.r = true;
   if ([" ", "ArrowUp", "w", "W"].includes(e.key)) { e.preventDefault(); if (!e.repeat) jump(); }
+  if (["f", "F", "j", "J"].includes(e.key)) firing = true;
 });
-addEventListener("keyup", e => { if (["ArrowLeft", "a", "A"].includes(e.key)) keys.l = false; if (["ArrowRight", "d", "D"].includes(e.key)) keys.r = false; });
+addEventListener("keyup", e => { if (["ArrowLeft", "a", "A"].includes(e.key)) keys.l = false; if (["ArrowRight", "d", "D"].includes(e.key)) keys.r = false; if (["f", "F", "j", "J"].includes(e.key)) firing = false; });
+const fb = $("fireBtn");
+fb.addEventListener("pointerdown", e => { e.preventDefault(); e.stopPropagation(); firing = true; });
+["pointerup", "pointercancel", "pointerleave"].forEach(n => fb.addEventListener(n, () => { firing = false; }));
 const touches = new Map();
 const syncT = () => { const v = [...touches.values()].filter(t => t.steer); keys.l = v.some(t => t.x < W / 2); keys.r = v.some(t => t.x >= W / 2); };
-cv.addEventListener("pointerdown", e => { touches.set(e.pointerId, { x: e.clientX, y0: e.clientY, t: performance.now(), steer: true }); syncT(); });
-cv.addEventListener("pointermove", e => { const t = touches.get(e.pointerId); if (!t) return; t.x = e.clientX; if (t.y0 - e.clientY > 40 && !t.jumped) { t.jumped = true; jump(); } syncT(); });
-["pointerup", "pointercancel"].forEach(n => cv.addEventListener(n, e => { const t = touches.get(e.pointerId); if (t && !t.jumped && performance.now() - t.t < 180) jump(); touches.delete(e.pointerId); syncT(); }));
+cv.addEventListener("pointerdown", e => { if (e.pointerType === "mouse") { aimX = e.clientX; aimY = e.clientY; if (running && e.button === 0) firing = true; return; } touches.set(e.pointerId, { x: e.clientX, y0: e.clientY, t: performance.now(), steer: true }); syncT(); });
+cv.addEventListener("pointermove", e => { if (e.pointerType === "mouse") { aimX = e.clientX; aimY = e.clientY; return; } const t = touches.get(e.pointerId); if (!t) return; t.x = e.clientX; if (t.y0 - e.clientY > 40 && !t.jumped) { t.jumped = true; jump(); } syncT(); });
+["pointerup", "pointercancel"].forEach(n => cv.addEventListener(n, e => { if (e.pointerType === "mouse") { firing = false; return; } const t = touches.get(e.pointerId); if (t && !t.jumped && performance.now() - t.t < 180) jump(); touches.delete(e.pointerId); syncT(); }));
 
 function jump() {
   if (!running) return;
@@ -123,6 +152,93 @@ function reset() {
   for (let z = 260; z < FAR; z += 120) spawnRow(z, true);
   spawnCable(420, 40);
   drawLetters();
+  bots = NAMES.map((name, i) => ({ name, kit: KITS[i % KITS.length], x: rnd(-FIELD + 20, FIELD - 20), z: i < 3 ? 85 + i * 30 : rnd(140, 900), h: 0, pv: 0, vx: 0, wx: rnd(-150, 150), hp: 100, alive: true,
+    cd: rnd(1.5, 3.2), pace: rnd(-.08, .08), think: rnd(0, 1.5), hitT: 0, fire: 0, bumpT: 0, kills: 0 }));
+  shots = []; dmgPops = []; killMarks = []; hp = 100; kills = 0; dmgDealt = 0; placed = 0; won = false; hitCool = 0; hitFlash = 0; fireCd = 0; fireFlash = 0; lockBot = null;
+  $("feed").innerHTML = ""; updateHP(); updateAlive();
+}
+const aliveBots = () => bots.filter(b => b.alive).length;
+function updateHP() { const v = Math.max(0, Math.ceil(hp)); $("hpNum").textContent = v; const bar = $("hpBar"); bar.style.width = v + "%"; bar.style.background = v > 50 ? "#43d17a" : v > 25 ? "#ffd43b" : "#ff6b6b"; }
+function updateAlive() { $("alive").textContent = aliveBots() + (running || won || !placed ? 1 : 0); $("elims").textContent = kills; }
+function addFeed(txt, me) { const d = document.createElement("div"); d.textContent = txt; if (me) d.className = "me"; const f = $("feed"); f.prepend(d); while (f.children.length > 5) f.lastChild.remove(); setTimeout(() => d.remove(), 5000); }
+// returns true if this hit eliminated you
+function hurtMe(d, why, by) {
+  if (!running) return true;
+  if (!by && hitCool > 0) return false;
+  hp -= d; hitFlash = Math.min(1, hitFlash + .55); shake = Math.max(shake, by ? .15 : .35); if (!by) hitCool = .6;
+  updateHP();
+  if (hp <= 0) { if (by) { by.kills++; addFeed(`${by.name} eliminated you`, true); } crash(why, by); return true; }
+  return false;
+}
+function hurtBot(b, d, by, how) {
+  if (!b.alive) return;
+  b.hp -= d; b.hitT = .15;
+  if (by === "me") { dmgDealt += Math.round(d); dmgPops.push({ x: b.x, z: b.z, h: b.h + 20, txt: String(Math.round(d)), t: .8 }); }
+  if (b.hp > 0) return;
+  b.alive = false;
+  for (let i = 0; i < 28; i++) parts.push({ x: b.x, z: b.z, h: 6, vx: rnd(-50, 50), vz: rnd(-30, 50), vh: rnd(20, 80), t: rnd(.6, 1.1), chip: i % 3 === 0 ? 1 : 0 });
+  if (by === "me") { kills++; nChips += 25; $("chips").textContent = nChips; hp = Math.min(100, hp + 20); updateHP(); toast(`ELIMINATED ${b.name}`); killMarks.push({ d: dist, x: b.x }); addFeed(`You eliminated ${b.name}`, true); }
+  else if (by) { by.kills++; addFeed(`${by.name} eliminated ${b.name}`); }
+  else addFeed({ tree: `${b.name} found a tree well`, rock: `${b.name} hit a rock`, tower: `${b.name} clipped a lift tower` }[how] || `${b.name} wiped out`);
+  updateAlive();
+  if (running && aliveBots() === 0) crash("win");
+}
+function fire(owner, tx, tz, th, spread, dmg, spd) {
+  const o = owner === "me" ? { x: px + 2.5, z: PZ, h: py + 8 } : { x: owner.x + 2.5, z: owner.z, h: owner.h + 8 };
+  tx += rnd(-spread, spread); th += rnd(-spread * .5, spread * .5);
+  const dx = tx - o.x, dz = tz - o.z, dh = th - o.h, L = Math.hypot(dx, dz, dh) || 1;
+  shots.push({ x: o.x, z: o.z, h: o.h, vx: dx / L * spd, vz: dz / L * spd, vh: dh / L * spd, owner, dmg, t: 1.3 });
+  if (owner === "me") fireFlash = .06; else owner.fire = .08;
+}
+// aim assist: lock onto the rider nearest the crosshair, otherwise shoot along the crosshair ray
+function aimTarget() {
+  const ax = aimX != null && !isTouch ? aimX : W / 2, ay = aimY != null && !isTouch ? aimY : H * .42, rad = isTouch ? 260 : 150;
+  let best = null, bd = 1e9;
+  for (const b of bots) { if (!b.alive || b.z < 14 || b.z > 1100) continue; const p = proj(b.x, b.z, b.h + 7), d = Math.hypot(p.x - ax, p.y - ay); if (d < bd) { bd = d; best = b; } }
+  if (best && bd < rad) { const dd = Math.hypot(best.x - px, best.z - PZ); return { x: best.x + best.vx * dd / 900, z: best.z, h: best.h + 7, bot: best }; }
+  const z = PZ + 400, f = focal() / z;
+  return { x: camX + (ax - W / 2) / f, z, h: CAMH + camY + z * SLOPE - (ay - horizon()) / f };
+}
+function segDist(x0, z0, h0, x1, z1, h1, px_, pz_, ph_) {
+  const dx = x1 - x0, dz = z1 - z0, dh = h1 - h0, L = dx * dx + dz * dz + dh * dh || 1;
+  const t = Math.max(0, Math.min(1, ((px_ - x0) * dx + (pz_ - z0) * dz + (ph_ - h0) * dh) / L));
+  return Math.hypot(x0 + dx * t - px_, z0 + dz * t - pz_, h0 + dh * t - ph_);
+}
+function updateShots(dt) {
+  for (const s of shots) {
+    const x0 = s.x, z0 = s.z, h0 = s.h;
+    s.x += s.vx * dt; s.z += s.vz * dt; s.h += s.vh * dt; s.t -= dt;
+    for (const o of obs) if (o.type === "tree" && Math.abs(o.z - s.z) < 6 && Math.abs(o.x - s.x) < o.s * .45 && s.h < o.s * 3) { s.t = 0; for (let i = 0; i < 6; i++) parts.push({ x: s.x, z: s.z, h: s.h, vx: rnd(-20, 20), vz: rnd(-20, 20), vh: rnd(0, 30), t: .5 }); break; }
+    if (s.t <= 0) continue;
+    if (s.owner !== "me" && running && segDist(x0, z0, h0, s.x, s.z, s.h, px, PZ, py + 7) < 6) { s.t = 0; if (hurtMe(s.dmg, "shot", s.owner)) return; continue; }
+    for (const b of bots) if (b.alive && b !== s.owner && segDist(x0, z0, h0, s.x, s.z, s.h, b.x, b.z, b.h + 7) < 6.5) { s.t = 0; hurtBot(b, s.dmg, s.owner, "shot"); break; }
+  }
+  shots = shots.filter(s => s.t > 0 && s.z > -10 && s.z < FAR);
+}
+function updateBots(dt, base) {
+  const me = { x: px, z: PZ, h: py, vx: pvx, me: 1 };
+  for (const b of bots) {
+    if (!b.alive) continue;
+    b.think -= dt; b.cd -= dt; b.hitT -= dt; b.fire -= dt; b.bumpT -= dt;
+    const foes = [...bots.filter(o => o.alive && o !== b), me].filter(o => Math.abs(o.z - b.z) < 380 && Math.abs(o.x - b.x) < 260);
+    let foe = null, fd = 1e9; for (const o of foes) { const d = Math.hypot(o.x - b.x, o.z - b.z) * (o.me ? .8 : 1); if (d < fd) { fd = d; foe = o; } }
+    if (b.think <= 0) { b.think = rnd(.8, 2); b.pace = Math.max(-.12, Math.min(.12, b.pace + rnd(-.06, .06))); b.wx = foe && Math.random() < .6 ? foe.x + rnd(-60, 60) : rnd(-FIELD + 20, FIELD - 20); }
+    b.z += (base * b.pace + (b.z > 900 ? -60 : b.z < 30 ? 60 : 0)) * dt;
+    let avoid = 0;
+    for (const o of obs) { if (o.type !== "tree" && o.type !== "rock" && o.type !== "tower") continue; const ahead = o.z - b.z; if (ahead < 0 || ahead > 70) continue;
+      const r = o.type === "tree" ? o.s * .42 + 7 : o.type === "rock" ? o.s * 1.1 + 5 : 9;
+      if (Math.abs(o.x - b.x) < r) { if (o.type === "rock" && ahead < 22 && b.h <= .5) b.pv = JUMPV; else if (o.type !== "rock" || b.h <= .5) avoid = b.x >= o.x ? 1 : -1; } }
+    const tx = avoid ? b.x + avoid * 60 : b.wx;
+    b.vx += (Math.max(-120, Math.min(120, (tx - b.x) * 2.5)) - b.vx) * Math.min(1, dt * 4);
+    b.x = Math.max(-FIELD, Math.min(FIELD, b.x + b.vx * dt));
+    if (b.h > 0 || b.pv > 0) { b.pv -= GRAV * dt; b.h += b.pv * dt; if (b.h <= 0) { b.h = 0; b.pv = 0; } }
+    if (b.bumpT <= 0) for (const o of obs) { if (Math.abs(o.z - b.z) > 5) continue; const dx = Math.abs(o.x - b.x);
+      if ((o.type === "tree" && dx < o.s * .42 + 3 && b.h < o.s * 3) || (o.type === "rock" && dx < o.s * 1.1 + 2 && b.h < o.s * 1.2) || (o.type === "tower" && dx < 5)) {
+        b.bumpT = .7; b.vx = (b.x >= o.x ? 1 : -1) * 160; hurtBot(b, o.type === "rock" ? 20 : 30, null, o.type); break; } }
+    if (!b.alive) continue;
+    if (b.h <= .5 && b.z < 520 && Math.random() < .6) parts.push({ x: b.x + rnd(-3, 3), z: b.z + rnd(-2, 2), h: rnd(0, 2), vx: -b.vx * rnd(.2, .6) + rnd(-12, 12), vz: rnd(-20, 10), vh: rnd(10, 26), t: rnd(.4, .7) });
+    if (b.cd <= 0 && foe) { b.cd = rnd(.55, 1.3); const d = Math.hypot(foe.x - b.x, foe.z - b.z); fire(b, foe.x + (foe.vx || 0) * d / 1040, foe.z, foe.h + 7, (foe.me ? 4.5 : 5) + d * .018, foe.me ? rnd(7, 12) : rnd(8, 14), 560); }
+  }
 }
 function addDecor(z) { [-1, 1].forEach(sd => { for (let i = 0; i < 2; i++) if (Math.random() < .75) decor.push({ type: "tree", x: sd * (FIELD + 10 + rnd(0, 220)), z: z + rnd(0, 26), s: rnd(12, 20), seed: Math.random() }); }); }
 function chipLine(x, z, n, dx, h = 0, arc = 0) { for (let i = 0; i < n; i++) chips.push({ x: x + dx * i, z: z + i * 15, h: h + 5 + (arc ? Math.sin(i / Math.max(1, n - 1) * Math.PI) * arc : 0) }); }
@@ -134,6 +250,7 @@ function spawnRow(z, easy) {
     else obs.push({ type: "rock", x, z: z + rnd(0, 30), s: rnd(4.5, 7) });
   }
   if (Math.random() < .55) { const x = rnd(-FIELD + 30, FIELD - 30); chipLine(x, z + 50, 6, rnd(-4, 4)); }
+  if (!easy && Math.random() < .13) obs.push({ type: "cocoa", x: rnd(-FIELD + 30, FIELD - 30), z: z + 35 });
   if (!letterOut && !chestOut && Math.random() < .5) {
     if (li < SEQ.length) { obs.push({ type: "letter", ch: SEQ[li], x: rnd(-FIELD + 40, FIELD - 40), z: z + 70, h: 7 }); letterOut = true; }
     else { obs.push({ type: "chest", x: px + rnd(-60, 60), z: z + 70 }); chestOut = true; }
@@ -210,23 +327,35 @@ function update(dt) {
   // hits
   for (const o of obs) {
     const dzz = Math.abs(o.z - PZ), dx = Math.abs(o.x - px);
-    if (o.type === "tree" && dzz < 5 && dx < o.s * .42 + 3 && py < o.s * 3) return crash("tree");
-    if (o.type === "rock" && dzz < 5 && dx < o.s * 1.1 + 2) { if (py > o.s * 1.2) { if (!o.cleared) { o.cleared = 1; dist += 8; toast("CLEAN"); } } else return crash("rock"); }
-    if (o.type === "tower" && dzz < 4 && dx < 5 && py < CABH - 3) return crash("tower");
+    if (o.type === "tree" && !o.hitMe && dzz < 5 && dx < o.s * .42 + 3 && py < o.s * 3) { o.hitMe = 1; if (hurtMe(35, "tree")) return; pvx = (px >= o.x ? 1 : -1) * 170; toast("OOF −35"); }
+    if (o.type === "rock" && dzz < 5 && dx < o.s * 1.1 + 2) { if (py > o.s * 1.2) { if (!o.cleared) { o.cleared = 1; dist += 8; toast("CLEAN"); } } else if (!o.hitMe) { o.hitMe = 1; if (hurtMe(25, "rock")) return; pv = 60; toast("ROCKED −25"); } }
+    if (o.type === "tower" && !o.hitMe && dzz < 4 && dx < 5 && py < CABH - 3) { o.hitMe = 1; if (hurtMe(40, "tower")) return; pvx = (px >= o.x ? 1 : -1) * 190; toast("TOWER −40"); }
+    if (o.type === "cocoa" && !o.got && dzz < 7 && dx < 9 && py < 12) { o.got = 1; hp = Math.min(100, hp + 30); updateHP(); toast("HOT COCOA +30"); }
     if (o.type === "letter" && !o.got && dzz < 8 && dx < 11 && Math.abs(o.h - (py + 6)) < 12) { o.got = 1; li++; letterOut = false; drawLetters(); toast(li >= SEQ.length ? "ALL LETTERS! FIND THE CHEST" : `${o.ch} COLLECTED`); o.z = -999; }
     if (o.type === "chest" && !o.got && dzz < 8 && dx < 14 && py < 14) { o.got = 1; nChests++; nChips += 250; li = 0; chestOut = false; drawLetters(); toast("CHEST UNLOCKED · +250"); for (let i = 0; i < 40; i++) parts.push({ x: o.x, z: o.z, h: 6, vx: rnd(-50, 50), vz: rnd(-20, 60), vh: rnd(30, 90), t: 1.2, chip: 1 }); }
   }
-  for (const c of cables) for (const cb of c.cabins) { const z = c.z + cb.o; if (Math.abs(z - PZ) < 7 && Math.abs(c.x - px) < 9 && !onCable && py + 13 > CABH - 26 && py < CABH - 8) return crash("cabin"); }
+  for (const c of cables) for (const cb of c.cabins) { const z = c.z + cb.o; if (Math.abs(z - PZ) < 7 && Math.abs(c.x - px) < 9 && !onCable && py + 13 > CABH - 26 && py < CABH - 8 && !cb.hitMe) { cb.hitMe = 1; if (hurtMe(40, "cabin")) return; pv = -40; } }
   for (const c of chips) if (!c.got && Math.abs(c.z - PZ) < 6 && Math.abs(c.x - px) < 8 && Math.abs(c.h - (py + 6)) < 10) { c.got = true; nChips++; }
+  if (!running) return;
+  hitCool -= dt; hitFlash = Math.max(0, hitFlash - dt * 1.4); fireCd -= dt; fireFlash -= dt;
+  const tgt = aimTarget(); lockBot = tgt.bot || null;
+  if (firing && fireCd <= 0) { fireCd = .16; fire("me", tgt.x, tgt.z, tgt.h, tgt.bot ? 1.2 : 0, rnd(18, 26), 900); }
+  updateBots(dt, speed / (onCable ? 1.25 : 1));
+  updateShots(dt);
+  dmgPops.forEach(p => { p.t -= dt; p.h += 14 * dt; }); dmgPops = dmgPops.filter(p => p.t > 0);
+  if (!running) return;
   if (track.length === 0 || dist - track[track.length - 1].d > 3) track.push({ d: dist, x: px, mode: onCable ? "cable" : py > gh + 1 ? "air" : "snow", v: speed });
   if (toastT > 0) { toastT -= dt; if (toastT <= 0) $("toast").style.opacity = 0; }
   $("score").textContent = Math.floor(dist) + " m"; $("chips").textContent = nChips;
 }
-function crash(type) {
-  running = false; shake = 1;
+function crash(type, by) {
+  if (!running) return;
+  running = false; firing = false; won = type === "win"; shake = won ? 0 : 1;
+  placed = won ? 1 : 1 + aliveBots(); updateAlive();
   const d = Math.floor(dist), nb = d > best; if (nb) { best = d; try { localStorage.setItem("kaspen-best", best); } catch (e) {} }
   $("best").textContent = best + " m";
-  $("crashWhy").textContent = { tree: "Ended in a tree well.", rock: "Caught a rock under the powder.", tower: "Clipped a lift tower.", cabin: "Jumped right into a gondola cabin." }[type];
+  $("crashWhy").textContent = won ? `#1 Victory. Last rider standing with ${kills} elim${kills === 1 ? "" : "s"}.` :
+    (type === "shot" ? `Eliminated by ${by.name}` : { tree: "One tree too many", rock: "Ran out of health on a rock", tower: "Lift tower took your last HP", cabin: "Gondola cabin took your last HP" }[type]) + ` · placed #${placed} of ${NAMES.length + 1}.`;
   $("bestLine").textContent = nb ? "New personal best!" : `Best: ${best} m`;
   setTimeout(() => { $("over").hidden = false; drawSummary(); $("again").focus(); }, 500);
 }
@@ -275,11 +404,25 @@ function draw(dt) {
   cables.forEach(c => { c.cabins.forEach(cb => items.push([c.z + cb.o, () => drawCabin(c, cb)]));
     for (let z = Math.max(4, c.z); z < c.z + c.len; z += 0) { const z2 = Math.min(c.z + c.len, z < 120 ? z + 10 : z + 80); const zz = z; items.push([zz + .5, () => drawCableSeg(c, zz, z2)]); z = z2; } });
   parts.forEach(p => items.push([p.z, () => drawPart(p)]));
+  bots.forEach(b => { if (b.alive) items.push([b.z, () => drawBoarder({ x: b.x, z: b.z, h: b.h, vx: b.vx, cable: false, air: b.h > 1, grab: b.h > 1 ? 1 : 0, spin: 0, ground: 0, kit: b.kit, flash: b.fire, name: b.name, hp: b.hp, hit: b.hitT })]); });
+  shots.forEach(s => items.push([s.z, () => drawShot(s)]));
+  dmgPops.forEach(p => items.push([p.z - .1, () => drawPop(p)]));
   items.push([PZ, drawRider]);
   items.filter(i => i[0] > 6).sort((a, b) => b[0] - a[0]).forEach(i => { const near = i[1] === drawRider ? 1 : Math.max(0, Math.min(1, (i[0] - 8) / (PZ * .7 - 8))); g.globalAlpha = Math.min(1, (FAR - i[0]) / 250, near); if (g.globalAlpha > .02) i[1](); });
   g.globalAlpha = 1;
+  if (lockBot && lockBot.alive && running) { const p = proj(lockBot.x, lockBot.z, lockBot.h + 7), r = Math.max(16, 9 * p.k); g.strokeStyle = "#ff4d4d"; g.lineWidth = 2.5;
+    [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(([a, b]) => { g.beginPath(); g.moveTo(p.x + a * r, p.y + b * r * .55); g.lineTo(p.x + a * r, p.y + b * r); g.lineTo(p.x + a * r * .55, p.y + b * r); g.stroke(); }); }
   g.restore();
+  if (running && isTouch) { const ax = W / 2, ay = H * .42; g.strokeStyle = "rgba(255,255,255,.85)"; g.lineWidth = 2; g.beginPath(); g.arc(ax, ay, 9, 0, 7); g.moveTo(ax - 16, ay); g.lineTo(ax - 11, ay); g.moveTo(ax + 11, ay); g.lineTo(ax + 16, ay); g.stroke(); }
+  if (hitFlash > 0) { const v = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .3, W / 2, H / 2, Math.max(W, H) * .75); v.addColorStop(0, "rgba(200,20,20,0)"); v.addColorStop(1, `rgba(200,20,20,${hitFlash * .55})`); g.fillStyle = v; g.fillRect(0, 0, W, H); }
 }
+function drawShot(s) {
+  if (s.z < 6) return; const t = .03, a = proj(s.x, s.z, s.h), b = proj(s.x - s.vx * t, Math.max(6, s.z - s.vz * t), s.h - s.vh * t);
+  const col = s.owner === "me" ? "124,243,255" : "255,170,70";
+  g.lineCap = "round"; g.strokeStyle = `rgba(${col},.35)`; g.lineWidth = Math.max(4, a.k * 1.8); g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke();
+  g.strokeStyle = `rgb(${col})`; g.lineWidth = Math.max(1.6, a.k * .6); g.stroke();
+}
+function drawPop(p) { if (p.z < 6) return; const q = proj(p.x, p.z, p.h); g.globalAlpha = Math.min(1, p.t * 2); g.font = "20px Bungee, Impact, sans-serif"; g.textAlign = "center"; g.lineWidth = 4; g.strokeStyle = "#041530"; g.strokeText(p.txt, q.x, q.y); g.fillStyle = "#ffd43b"; g.fillText(p.txt, q.x, q.y); }
 function xyk(x, z, h = 0) { const p = proj(x, z, h); return [p.x, p.y, p.k]; }
 function drawTrail() {
   if (trail.length < 2) return;
@@ -330,6 +473,14 @@ function drawObj(o) {
     g.strokeStyle = "#d8b45a"; g.lineWidth = Math.max(1, s * .1); g.strokeRect(-s * .68, -s * .88, s * 1.36, s * 1.76);
     g.fillStyle = "#d8b45a"; g.font = `900 ${Math.max(8, s * 1.45)}px Cinzel, Georgia, serif`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(o.ch, 0, s * .08);
     g.restore(); return; }
+  if (o.type === "cocoa") { if (o.got) return; const q = proj(o.x, o.z, 0), s = 4 * q.k, bob = Math.sin(t0 / 300 + o.z) * s * .15;
+    g.fillStyle = "rgba(11,59,140,.15)"; g.beginPath(); g.ellipse(q.x, q.y, s * 1.6, s * .4, 0, 0, 7); g.fill();
+    const y0 = q.y - s * 2.8 + bob; g.strokeStyle = "#f4f6fa"; g.lineWidth = Math.max(1.5, s * .35); g.beginPath(); g.arc(q.x + s * 1.1, y0 + s * 1.2, s * .6, -1.3, 1.3); g.stroke();
+    g.fillStyle = "#f4f6fa"; rrect(q.x - s * 1.1, y0, s * 2.2, s * 2.6, s * .35); g.fill();
+    g.fillStyle = "#8c1d2c"; g.fillRect(q.x - s * 1.1, y0 + s * 1.1, s * 2.2, s * .6);
+    g.fillStyle = "#5a3520"; g.beginPath(); g.ellipse(q.x, y0 + s * .15, s * 1, s * .3, 0, 0, 7); g.fill();
+    g.strokeStyle = "rgba(255,255,255,.8)"; g.lineWidth = Math.max(1, s * .2); for (let i = -1; i <= 1; i++) { g.beginPath(); g.moveTo(q.x + i * s * .5, y0 - s * .2); g.quadraticCurveTo(q.x + i * s * .5 + s * .5 * Math.sin(t0 / 200 + i), y0 - s, q.x + i * s * .5, y0 - s * 1.8); g.stroke(); }
+    return; }
   if (o.type === "chest") { if (o.got) return; const q = proj(o.x, o.z, 0), s = 6 * q.k, bob = Math.sin(t0 / 300) * s * .08;
     g.fillStyle = "rgba(216,180,90,.35)"; g.beginPath(); g.ellipse(q.x, q.y, s * 2.6, s * .7, 0, 0, 7); g.fill();
     g.fillStyle = "#6b4321"; g.fillRect(q.x - s * 1.5, q.y - s * 1.6 + bob, s * 3, s * 1.6);
@@ -382,48 +533,61 @@ function drawChip(c) {
   g.fillStyle = "#3b86f0"; g.beginPath(); g.ellipse(p.x, p.y, r * w * .42, r * .42, 0, 0, 7); g.fill();
 }
 /* the rider, seen from behind: wide stance, baggy fit, beanie, grabs and spins when sending it */
-function drawRider() {
-  const base = proj(px, PZ, py), k = base.k, x = base.x, y = base.y;
-  const shG = proj(px, PZ, onCable ? CABH : groundH()); g.fillStyle = "rgba(11,59,140,.18)"; g.beginPath(); g.ellipse(shG.x, shG.y, 9 * k, 2 * k, 0, 0, 7); g.fill();
-  const lean = onCable ? Math.sin(t0 / 180) * .05 : Math.max(-.32, Math.min(.32, pvx / 380));
-  const air = py > groundH() + 1 && !onCable;
-  const sp = Math.cos(spinA);
+function drawRider() { drawBoarder({ x: px, z: PZ, h: py, vx: pvx, cable: !!onCable, air: py > groundH() + 1 && !onCable, grab, spin: spinA, ground: onCable ? CABH : groundH(), kit: KIT_ME, flash: fireFlash }); }
+function drawBoarder(r) {
+  const K = r.kit, base = proj(r.x, r.z, r.h), k = base.k, x = base.x, y = base.y;
+  if (x < -200 || x > W + 200) return;
+  const shG = proj(r.x, r.z, r.ground); g.fillStyle = "rgba(11,59,140,.18)"; g.beginPath(); g.ellipse(shG.x, shG.y, 9 * k, 2 * k, 0, 0, 7); g.fill();
+  const onCable = r.cable, grab = r.grab, air = r.air;
+  const lean = onCable ? Math.sin(t0 / 180) * .05 : Math.max(-.32, Math.min(.32, r.vx / 380));
+  const sp = Math.cos(r.spin);
   g.save(); g.translate(x, y); g.rotate(lean);
   const s = k * .36;
   // board (seen from behind: the tail is closest, nose points down the hill)
   g.save(); g.scale(air ? sp : 1, 1);
   g.fillStyle = "#101521"; rrect(-11 * s, -1.6 * s, 22 * s, 3.2 * s, 1.6 * s); g.fill();
-  g.fillStyle = "#8c1d2c"; rrect(-10.4 * s, -1.6 * s, 20.8 * s, 2.2 * s, 1.1 * s); g.fill();
-  g.fillStyle = "#d8b45a"; g.fillRect(-2.5 * s, -1.4 * s, 5 * s, 1.6 * s);
+  g.fillStyle = K.main; rrect(-10.4 * s, -1.6 * s, 20.8 * s, 2.2 * s, 1.1 * s); g.fill();
+  g.fillStyle = K.acc; g.fillRect(-2.5 * s, -1.4 * s, 5 * s, 1.6 * s);
   g.restore();
   g.save(); g.scale(air ? (Math.abs(sp) * .7 + .3) * Math.sign(sp || 1) : 1, 1);
   const crouch = air ? 2.2 : 0;
   // legs: wide, bent, baggy pants
-  g.fillStyle = "#2b3a2f";
+  g.fillStyle = K.pants;
   g.beginPath(); g.moveTo(-6 * s, -1 * s); g.quadraticCurveTo(-8 * s, -6 * s + crouch * s, -4.5 * s, -10 * s + crouch * s); g.lineTo(-.6 * s, -10 * s + crouch * s); g.quadraticCurveTo(-3 * s, -6 * s, -2.5 * s, -1 * s); g.fill();
   g.beginPath(); g.moveTo(6 * s, -1 * s); g.quadraticCurveTo(8 * s, -6 * s + crouch * s, 4.5 * s, -10 * s + crouch * s); g.lineTo(.6 * s, -10 * s + crouch * s); g.quadraticCurveTo(3 * s, -6 * s, 2.5 * s, -1 * s); g.fill();
   g.fillStyle = "#1a1f29"; g.fillRect(-7 * s, -2.2 * s, 4.6 * s, 1.6 * s); g.fillRect(2.4 * s, -2.2 * s, 4.6 * s, 1.6 * s);
   // oversized hoodie
   const hy = -10 * s + crouch * s;
-  g.fillStyle = "#8c1d2c"; g.beginPath(); g.moveTo(-6 * s, hy + 1.5 * s); g.quadraticCurveTo(-7 * s, hy - 6 * s, -3.5 * s, hy - 9.5 * s); g.lineTo(3.5 * s, hy - 9.5 * s); g.quadraticCurveTo(7 * s, hy - 6 * s, 6 * s, hy + 1.5 * s); g.closePath(); g.fill();
-  g.fillStyle = "#6e1522"; g.fillRect(-6 * s, hy - .2 * s, 12 * s, 1.8 * s);
-  g.fillStyle = "#d8b45a"; g.font = `900 ${3.4 * s}px Cinzel, Georgia, serif`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("ΚΑ", 0, hy - 5 * s);
+  g.fillStyle = K.main; g.beginPath(); g.moveTo(-6 * s, hy + 1.5 * s); g.quadraticCurveTo(-7 * s, hy - 6 * s, -3.5 * s, hy - 9.5 * s); g.lineTo(3.5 * s, hy - 9.5 * s); g.quadraticCurveTo(7 * s, hy - 6 * s, 6 * s, hy + 1.5 * s); g.closePath(); g.fill();
+  g.fillStyle = K.dark; g.fillRect(-6 * s, hy - .2 * s, 12 * s, 1.8 * s);
+  g.fillStyle = K.acc; g.font = `900 ${3.4 * s}px Cinzel, Georgia, serif`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(K.logo, 0, hy - 5 * s);
   // arms: loose and low for steez; grab the board in the air; out to the sides on the cable
-  g.strokeStyle = "#8c1d2c"; g.lineCap = "round"; g.lineWidth = 2.6 * s;
+  g.strokeStyle = K.main; g.lineCap = "round"; g.lineWidth = 2.6 * s;
   const arms = air && grab ? [[-5, -7.5, -7, -1], [5, -7.5, 3, -3]] : onCable ? [[-5, -8, -12, -11], [5, -8, 12, -11]] : [[-5, -8, -9 - lean * 8, -2], [5, -8, 9 - lean * 8, -3.5]];
   arms.forEach(([x1, y1, x2, y2]) => { g.beginPath(); g.moveTo(x1 * s, hy + (y1 + 8) * s); g.lineTo(x2 * s, (x2 === -7 || x2 === 3) ? -1 * s : hy + (y2 + 8) * s); g.stroke();
     g.fillStyle = "#101521"; g.beginPath(); g.arc(x2 * s, (x2 === -7 || x2 === 3) ? -1 * s : hy + (y2 + 8) * s, 1.4 * s, 0, 7); g.fill(); });
+  // blaster in the right hand
+  const ga = arms[1], gx = ga[2] * s, gy = ga[2] === 3 ? -1 * s : hy + (ga[3] + 8) * s;
+  g.fillStyle = "#1d2433"; g.fillRect(gx - 1.3 * s, gy - 3.4 * s, 2.6 * s, 3.6 * s); g.fillStyle = "#7cf3ff"; g.fillRect(gx - .5 * s, gy - 3.1 * s, 1 * s, 1.3 * s);
+  if (r.flash > 0) { g.fillStyle = "rgba(255,236,150,.95)"; g.beginPath(); g.arc(gx, gy - 4.4 * s, 2.8 * s, 0, 7); g.fill(); }
   // hood + beanie
-  g.fillStyle = "#6e1522"; g.beginPath(); g.ellipse(0, hy - 9.5 * s, 3.8 * s, 2 * s, 0, 0, 7); g.fill();
+  g.fillStyle = K.dark; g.beginPath(); g.ellipse(0, hy - 9.5 * s, 3.8 * s, 2 * s, 0, 0, 7); g.fill();
   g.fillStyle = "#c79a74"; g.fillRect(-1.2 * s, hy - 10.4 * s, 2.4 * s, 1.2 * s);
   g.fillStyle = "#3b2a1e"; g.beginPath(); g.arc(0, hy - 11.6 * s, 2.7 * s, 0, 7); g.fill();
-  g.fillStyle = "#d8b45a"; g.beginPath(); g.arc(0, hy - 12.4 * s, 2.9 * s, Math.PI, 0); g.fill(); g.fillRect(-2.9 * s, hy - 12.6 * s, 5.8 * s, 1.2 * s);
-  g.fillStyle = "#8c1d2c"; g.fillRect(-2.9 * s, hy - 11.6 * s, 5.8 * s, .9 * s);
+  g.fillStyle = K.acc; g.beginPath(); g.arc(0, hy - 12.4 * s, 2.9 * s, Math.PI, 0); g.fill(); g.fillRect(-2.9 * s, hy - 12.6 * s, 5.8 * s, 1.2 * s);
+  g.fillStyle = K.main; g.fillRect(-2.9 * s, hy - 11.6 * s, 5.8 * s, .9 * s);
   g.fillStyle = "#1d2433"; g.fillRect(-3 * s, hy - 11.2 * s, 6 * s, .8 * s);
-  g.fillStyle = "#d8b45a"; g.beginPath(); g.arc(0, hy - 15.2 * s, 1 * s, 0, 7); g.fill();
+  g.fillStyle = K.acc; g.beginPath(); g.arc(0, hy - 15.2 * s, 1 * s, 0, 7); g.fill();
   g.restore();
   g.restore();
+  if (r.hit > 0) { g.fillStyle = "rgba(255,255,255,.55)"; g.beginPath(); g.ellipse(x, y - 14 * k * .36, 8 * k * .36, 14 * k * .36, 0, 0, 7); g.fill(); }
+  if (r.name && r.z < 760) { const s2 = k * .36, ty = y - 31 * s2 - 4, bw = Math.max(38, 24 * s2);
+    g.font = `700 ${Math.max(10, Math.min(13, 3.6 * s2))}px JetBrains Mono, monospace`; g.textAlign = "center"; g.textBaseline = "alphabetic";
+    g.fillStyle = "rgba(4,21,48,.7)"; g.fillRect(x - bw / 2 - 2, ty - 2, bw + 4, 8);
+    g.fillStyle = r.hp > 50 ? "#43d17a" : r.hp > 25 ? "#ffd43b" : "#ff6b6b"; g.fillRect(x - bw / 2, ty, bw * Math.max(0, r.hp) / 100, 4);
+    g.lineWidth = 3; g.strokeStyle = "rgba(4,21,48,.85)"; g.strokeText(r.name, x, ty - 5); g.fillStyle = "#fff"; g.fillText(r.name, x, ty - 5); }
 }
+
 function drawTree(o, x, y, k) {
   const h = o.s * 3.4 * k, w = o.s * 1.15 * k, R = i => { const v = Math.sin(o.seed * 9301 + i * 49.3) * 43758.5; return v - Math.floor(v); };
   g.fillStyle = "rgba(11,59,140,.16)"; g.beginPath(); g.ellipse(x + w * .35, y + 1, w * 1.1, w * .22, 0, 0, 7); g.fill();
@@ -461,10 +625,11 @@ function drawSummary() {
   const avg = dist / Math.max(1, time) * 3.6, top = topSpeed / 8 * 3.6, vert = Math.round(dist * .32);
   const cableM = track.filter(p => p.mode === "cable").length * 3;
   const hr = new Date().getHours();
-  $("runName").textContent = (hr < 12 ? "Morning" : hr < 17 ? "Afternoon" : "Evening") + " Shred at Kaspen";
+  $("runName").textContent = won ? "#1 Victory at Kaspen" : (hr < 12 ? "Morning" : hr < 17 ? "Afternoon" : "Evening") + " Shred at Kaspen";
   $("when").textContent = new Date().toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" }) + " · Kaspen Mountain";
   $("stats").innerHTML = [["Distance", (dist / 1000).toFixed(2) + " km"], ["Moving time", `${mins}:${String(secs).padStart(2, "0")}`], ["Vertical", vert + " m"],
     ["Avg speed", avg.toFixed(1) + " km/h"], ["Max speed", top.toFixed(1) + " km/h"], ["On the lines", cableM + " m"],
+    ["Placement", `#${placed} of ${NAMES.length + 1}`], ["Eliminations", kills], ["Damage dealt", dmgDealt],
     ["Chips", nChips], ["Letters", `${li}/${SEQ.length}`], ["Chests", nChests]].map(([a, b]) => `<div><small>${a}</small><b>${b}</b></div>`).join("");
   // map: run winds down the mountain; x across the slope, y downhill
   const m = $("map"), c = m.getContext("2d"), MW = m.width, MH = m.height;
@@ -491,12 +656,14 @@ function drawSummary() {
   c.strokeStyle = "rgba(252,76,2,.25)"; c.lineWidth = 16; c.beginPath(); track.forEach((p, i) => { const [X, Y] = P(p.x, p.d); i ? c.lineTo(X, Y) : c.moveTo(X, Y); }); c.stroke();
   c.strokeStyle = "#fc4c02"; c.lineWidth = 6; c.stroke();
   segs.forEach(s => { c.strokeStyle = "#1463f3"; c.lineWidth = 7; c.beginPath(); track.filter(p => p.d >= s.a.d && p.d <= s.b.d).forEach((p, i) => { const [X, Y] = P(p.x, p.d); i ? c.lineTo(X, Y) : c.moveTo(X, Y); }); c.stroke(); });
+  killMarks.forEach(km => { const [X, Y] = P(km.x, km.d); c.fillStyle = "#8c1d2c"; c.beginPath(); c.arc(X, Y, 12, 0, 7); c.fill(); c.strokeStyle = "#fff"; c.lineWidth = 3; c.stroke();
+    c.beginPath(); c.moveTo(X - 5, Y - 5); c.lineTo(X + 5, Y + 5); c.moveTo(X + 5, Y - 5); c.lineTo(X - 5, Y + 5); c.stroke(); });
   if (track.length) { const [sx0, sy0] = P(track[0].x, track[0].d), e = track[track.length - 1], [ex, ey] = P(e.x, e.d);
     c.fillStyle = "#0a8f3c"; c.beginPath(); c.arc(sx0, sy0, 12, 0, 7); c.fill(); c.strokeStyle = "#fff"; c.lineWidth = 4; c.stroke();
     for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { c.fillStyle = (i + j) % 2 ? "#242428" : "#fff"; c.fillRect(ex - 12 + i * 6, ey - 12 + j * 6, 6, 6); }
     c.strokeStyle = "#242428"; c.lineWidth = 2; c.strokeRect(ex - 12, ey - 12, 24, 24); }
   c.fillStyle = "#242428"; c.font = "600 26px JetBrains Mono, monospace"; c.textAlign = "left"; c.fillText("KASPEN MOUNTAIN", 24, MH - 24);
-  c.textAlign = "right"; c.fillStyle = "#6d6d78"; c.font = "22px JetBrains Mono, monospace"; c.fillText("— route   - - lift line   ▬ cable ride", MW - 24, MH - 24);
+  c.textAlign = "right"; c.fillStyle = "#6d6d78"; c.font = "22px JetBrains Mono, monospace"; c.fillText("— route   - - lift line   ▬ cable ride   ✕ elim", MW - 24, MH - 24);
   // elevation profile
   const e = $("elev"), ec = e.getContext("2d"), EW = e.width, EH = e.height;
   ec.fillStyle = "#fff"; ec.fillRect(0, 0, EW, EH);
