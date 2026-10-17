@@ -71,16 +71,16 @@ function proj(x, z) { const f = focal() / z; return { x: W / 2 + (x - camX) * f,
 function reset() {
   obs = []; pops = []; jy = 0; jv = 0; camX = 0; vx = 0; speed = 160; dist = 0; spawnZ = 0; shake = 0; spin = 0;
   flakes = Array.from({ length: 90 }, () => ({ x: Math.random() * 2 - 1, y: Math.random() * 2 - 1, z: Math.random() }));
-  for (let z = 300; z < FAR; z += 45) spawnRow(z, true);
+  for (let z = 350; z < FAR; z += 95) spawnRow(z, true);
 }
 function spawnRow(z, easy) {
-  const n = easy ? 1 : 1 + Math.floor(Math.random() * (2 + dist / 500));
+  const n = easy ? 1 : 1 + Math.floor(Math.random() * Math.min(3, 1.5 + dist / 1500));
   for (let i = 0; i < n; i++) {
     const r = Math.random(), type = r < .65 ? "tree" : r < .92 ? "rock" : "bump";
     obs.push({ x: camX + (Math.random() * 2 - 1) * LANE, z: z + Math.random() * 30, type, s: type === "tree" ? 9 + Math.random() * 7 : type === "rock" ? 4 + Math.random() * 4 : 6, seed: Math.random() });
   }
   // keep the edges lined with forest
-  if (Math.random() < .8) obs.push({ x: camX + (Math.random() < .5 ? -1 : 1) * (LANE + 40 + Math.random() * 200), z, type: "tree", s: 12 + Math.random() * 8 });
+  if (Math.random() < .5) obs.push({ x: camX + (Math.random() < .5 ? -1 : 1) * (LANE + 40 + Math.random() * 200), z, type: "tree", s: 12 + Math.random() * 8 });
 }
 $("jump").addEventListener("pointerdown", e => { e.preventDefault(); e.stopPropagation(); jump(); });
 function start() { reset(); running = true; $("start").hidden = true; $("over").hidden = true; $("jump").hidden = false; last = performance.now(); requestAnimationFrame(loop); }
@@ -92,7 +92,7 @@ function loop(t) {
   if (running || shake > 0) requestAnimationFrame(loop);
 }
 function update(dt) {
-  speed = Math.min(620, 160 + dist * .45);
+  speed = Math.min(480, 150 + dist * .12);
   const steer = (keys.r ? 1 : 0) - (keys.l ? 1 : 0);
   vx += steer * 520 * dt; vx *= Math.pow(.08, dt); vx = Math.max(-150, Math.min(150, vx));
   camX += vx * dt;
@@ -101,7 +101,7 @@ function update(dt) {
   spin += (vx / 150) * dt * 1.5 + dt * .4;     // saucer slowly rotates
   const dz = speed * dt; dist += dz / 8;
   obs.forEach(o => o.z -= dz); obs = obs.filter(o => o.z > 2);
-  spawnZ -= dz; const gap = Math.max(16, 55 - dist / 50);
+  spawnZ -= dz; const gap = Math.max(40, 95 - dist / 80);
   while (spawnZ < 0) { spawnRow(FAR, false); spawnZ += gap; }
   flakes.forEach(f => { f.z -= dt * (speed / 500); if (f.z < .05) { f.z = 1; f.x = Math.random() * 2 - 1; f.y = Math.random() * 2 - 1; } });
   for (const o of obs) {
