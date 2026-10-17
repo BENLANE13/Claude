@@ -28,8 +28,8 @@ kbd { background: rgba(255,255,255,.15); border-radius: 5px; padding: 1px 6px; }
 <div class="hud"><div><small>DISTANCE</small><b id="score">0 m</b></div><div style="text-align:center"><small>BLUE COINS</small><b id="coins" style="color:#7cc4ff">0</b></div><div style="text-align:right"><small>BEST</small><b id="best">0 m</b></div></div>
 <div class="screen" id="start"><div class="card">
   <h1>Treeline Run</h1>
-  <p>Sled down the mountain in three lanes. Jump rocks, dodge trees, ride ramps up onto parked gondola cabins and hop between their roofs, and grab every blue coin.</p>
-  <p><kbd>←</kbd> <kbd>→</kbd> switch lanes · <kbd>Space</kbd> / <kbd>↑</kbd> jump · on a phone, swipe left/right, swipe up or tap to jump</p>
+  <p>Sled down the mountain in three lanes. Jump rocks, dodge trees, ride ramps onto gondola roofs, hit kickers to launch up and slide along zipline cables, and grab every blue coin.</p>
+  <p><kbd>←</kbd> <kbd>→</kbd> switch lanes · <kbd>Space</kbd> / <kbd>↑</kbd> jump (or let go of a zipline) · on a phone, swipe left/right, swipe up or tap to jump</p>
   <button id="go">Drop in</button>
 </div></div>
 <div class="screen" id="over" hidden><div class="card">
@@ -54,8 +54,8 @@ $("best").textContent = best + " m";
 // world: 3 lanes like a runner game; z = distance ahead of you, h = height above the snow
 const FAR = 1400, CAMH = 14, SLOPE = .15, GRAV = 210, JUMPV = 92, LANE = 34, PZ = 9;
 const CAB = { h: 17, w: 24, seg: 46 };   // gondola cabin: height, width, length of one car
-const RAMP = 34;
-let running = false, obs, decor, coins, flakes, pops, lane, camX, vx, speed, dist, nCoins, last, spawnZ, decorZ, shake, spin, py, pv, gH, t0 = 0;
+const RAMP = 34, KICK = { h: 8, len: 26, v: 150 }, ZIP = 44, HANG = 34;   // kicker ramps launch you; zipline cable height; your height while hanging
+let running = false, obs, decor, coins, flakes, pops, lane, camX, vx, speed, dist, nCoins, last, spawnZ, decorZ, shake, spin, py, pv, gH, zipping, sparks, t0 = 0;
 const laneX = l => (l - 1) * LANE;
 const horizon = () => H * .27;
 const focal = () => Math.min(W, H * 1.2) * .9;
@@ -63,8 +63,9 @@ function proj(x, z, h = 0) { const f = focal() / z; return { x: W / 2 + (x - cam
 
 // controls: arrows/A-D switch lanes, up/W/space jump; on touch, swipe left/right/up or tap to jump
 function move(d) { if (!running) return; const nl = Math.max(0, Math.min(2, lane + d)); if (nl === lane) return;
+  if (zipping) { lane = nl; zipping = zipAt(nl); if (!zipping) pv = 0; return; }
   if (blockedAt(nl)) { shake = .35; pops.push({ txt: "BONK", t: .6 }); return; } lane = nl; }
-function jump() { if (running && py <= gH + .5) pv = JUMPV; }
+function jump() { if (!running) return; if (zipping) { zipping = null; pv = 20; pops.push({ txt: "LET GO", t: .5 }); return; } if (py <= gH + .5) pv = JUMPV; }
 addEventListener("keydown", e => {
   if (!running && (e.key === " " || e.key === "Enter")) { e.preventDefault(); start(); return; }
   if (e.repeat) return;
@@ -79,7 +80,7 @@ cv.addEventListener("pointermove", e => { if (!sw || sw.used) return; const dx =
 cv.addEventListener("pointerup", () => { if (sw && !sw.used) jump(); sw = null; });
 
 function reset() {
-  obs = []; decor = []; coins = []; pops = []; lane = 1; camX = 0; vx = 0; speed = 150; dist = 0; nCoins = 0; spawnZ = 260; decorZ = 0; shake = 0; spin = 0; py = 0; pv = 0; gH = 0;
+  obs = []; decor = []; coins = []; pops = []; lane = 1; camX = 0; vx = 0; speed = 150; dist = 0; nCoins = 0; spawnZ = 260; decorZ = 0; shake = 0; spin = 0; py = 0; pv = 0; gH = 0; zipping = null; sparks = [];
   flakes = Array.from({ length: 90 }, () => ({ x: Math.random() * 2 - 1, y: Math.random() * 2 - 1, z: Math.random() }));
   for (let z = 40; z < FAR; z += 30) addDecor(z);
   coinLine(1, 120, 6, 0);
@@ -95,13 +96,28 @@ function spawnChunk(z) {
     const lanes = [0, 1, 2].filter(l => l !== free || Math.random() < .35);
     let longest = 0;
     lanes.forEach(l => { const cars = 1 + Math.floor(Math.random() * 3), len = cars * CAB.seg, zz = z + rnd(0, 30);
-      const ramp = Math.random() < .55; obs.push({ type: "gondola", lane: l, z: zz, len, cars, ramp, hue: pick(["#1463f3", "#0b3b8c", "#c9362d", "#2f6fd6"]) });
+      const ramp = Math.random() < .8; obs.push({ type: "gondola", lane: l, z: zz, len, cars, ramp, hue: pick(["#1463f3", "#0b3b8c", "#c9362d", "#2f6fd6"]) });
       if (Math.random() < .7) coinLine(l, zz + 6, Math.floor(len / 16), CAB.h);
       longest = Math.max(longest, zz - z + len + (ramp ? RAMP : 0)); });
     if (lanes.length === 3) { const l = pick([0, 1, 2]); const o = obs[obs.length - 3 + l]; o.ramp = true; }
     return longest;
   }
-  if (r < .75) {
+  if (r < .58) {
+    // zipline: kicker ramp launches you up to a cable you can slide along
+    const l = Math.floor(Math.random() * 3), len = rnd(320, 520);
+    obs.push({ type: "kicker", lane: l, z });
+    obs.push({ type: "zip", lane: l, z: z + KICK.len + 20, len });
+    if (Math.random() < .6) { const l2 = (l + pick([1, 2])) % 3; obs.push({ type: "zip", lane: l2, z: z + KICK.len + 90, len: len * .8 }); coinLine(l2, z + KICK.len + 110, Math.floor(len * .8 / 22), HANG + 2); }
+    coinLine(l, z - 40, 3, 0); coinLine(l, z + KICK.len + 30, Math.floor(len / 18), HANG + 2);
+    return KICK.len + len + 60;
+  }
+  if (r < .72) {
+    // lone kicker with a coin arc
+    const l = Math.floor(Math.random() * 3); obs.push({ type: "kicker", lane: l, z }); coinLine(l, z + KICK.len + 10, 7, KICK.h, true);
+    for (const c of coins.slice(-7)) c.h += 14;
+    return 140;
+  }
+  if (r < .86) {
     [0, 1, 2].filter(l => l !== free).forEach(l => { if (Math.random() < .75) obs.push(Math.random() < .55 ? { type: "rock", lane: l, z, s: rnd(5, 7) } : { type: "tree", lane: l, z, s: rnd(10, 14), seed: Math.random() }); });
     const rockLane = obs.filter(o => o.z === z && o.type === "rock").map(o => o.lane);
     if (rockLane.length && Math.random() < .6) coinLine(rockLane[0], z - 40, 6, 0, true); else coinLine(free, z - 30, 5, 0);
@@ -121,15 +137,18 @@ function loop(t) {
 // height of whatever is under you in a lane at depth PZ (snow, ramp or cabin roof)
 function groundAt(l) {
   let h = 0;
-  for (const o of obs) { if (o.type !== "gondola" || o.lane !== l) continue;
+  for (const o of obs) { if (o.lane !== l) continue;
+    if (o.type === "kicker") { if (PZ >= o.z && PZ <= o.z + KICK.len) h = Math.max(h, KICK.h * (PZ - o.z) / KICK.len); continue; }
+    if (o.type !== "gondola") continue;
     if (PZ >= o.z && PZ <= o.z + o.len) h = Math.max(h, CAB.h);
     else if (o.ramp && PZ >= o.z - RAMP && PZ < o.z) h = Math.max(h, CAB.h * (1 - (o.z - PZ) / RAMP)); }
   return h;
 }
+function zipAt(l) { return obs.find(o => o.type === "zip" && o.lane === l && PZ >= o.z && PZ <= o.z + o.len) || null; }
 function blockedAt(l) { const h = groundAt(l); return h > py + 3; }
 function update(dt) {
-  speed = Math.min(480, 150 + dist * .12);
-  const tx = laneX(lane); vx = (tx - camX) * 12; camX += vx * dt;
+  speed = Math.min(480, 150 + dist * .12) * (zipping ? 1.3 : 1);
+  const tx = laneX(lane), nx = camX + (tx - camX) * (1 - Math.exp(-dt * 9)); vx += ((nx - camX) / Math.max(dt, 1e-4) - vx) * Math.min(1, dt * 6); camX = nx;
   const dz = speed * dt; dist += dz / 8; spin += dt * .5 + vx * dt * .004;
   [obs, decor, coins].forEach(a => a.forEach(o => o.z -= dz));
   obs = obs.filter(o => o.z + (o.len || 0) > -10); decor = decor.filter(o => o.z > 2); coins = coins.filter(c => c.z > 2 && !c.gone);
@@ -139,11 +158,17 @@ function update(dt) {
   pops.forEach(p => p.t -= dt); pops = pops.filter(p => p.t > 0);
   // vertical: gravity, landing on snow, ramps and roofs
   const ng = groundAt(lane);
-  if (ng > py + 3) return crash("gondola");
-  pv -= GRAV * dt; py += pv * dt;
-  if (py <= ng) { if (pv < -60) shake = Math.max(shake, .2); py = ng; pv = Math.max(0, pv); if (ng > gH + .2 && ng >= CAB.h - .1 && gH < CAB.h - .1) pops.push({ txt: "ON THE GONDOLA!", t: .9 }); }
+  if (!zipping && ng > py + 3) return crash("gondola");
+  for (const o of obs) if (o.type === "kicker" && o.lane === lane && !o.used && PZ > o.z + KICK.len && py <= KICK.h + 1) { o.used = 1; pv = KICK.v; pops.push({ txt: "SEND IT!", t: .7 }); }
+  if (zipping && PZ > zipping.z + zipping.len) { zipping = null; pv = 10; }
+  if (!zipping && pv > -10 && py >= HANG - 6) { const zp = zipAt(lane); if (zp) { zipping = zp; pops.push({ txt: "ZIPLINE!", t: .8 }); } }
+  if (zipping) { py += (HANG - py) * Math.min(1, dt * 12); pv = 0; dist += dz / 40;
+    sparks.push({ x: (Math.random() - .5) * 30, y: 0, vx: (Math.random() - .5) * 160, vy: -Math.random() * 120, t: .4 }); }
+  else { pv -= GRAV * dt; py += pv * dt; }
+  sparks.forEach(p => { p.t -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 600 * dt; }); sparks = sparks.filter(p => p.t > 0);
+  if (py <= ng) { if (pv < -90) shake = Math.max(shake, .1); py = ng; pv = Math.max(0, pv); if (ng > gH + .2 && ng >= CAB.h - .1 && gH < CAB.h - .1) pops.push({ txt: "ON THE GONDOLA!", t: .9 }); }
   gH = ng;
-  for (const o of obs) { if (o.lane !== lane || o.type === "gondola") continue; if (Math.abs(o.z - PZ) > 5) continue;
+  for (const o of obs) { if (o.lane !== lane || o.type === "gondola" || o.type === "kicker" || o.type === "zip") continue; if (Math.abs(o.z - PZ) > 5) continue;
     if (o.type === "rock") { if (py > o.s * 1.3) { if (!o.cleared) { o.cleared = 1; dist += 10; pops.push({ txt: "AIR! +10 m", t: .8 }); } } else return crash("rock"); }
     if (o.type === "tree" && py < 30) return crash("tree"); }
   for (const c of coins) { if (c.got || c.lane !== lane || Math.abs(c.z - PZ) > 6 || Math.abs(c.h - (py + 6)) > 10) continue; c.got = true; c.gone = true; nCoins++; }
@@ -163,7 +188,7 @@ function crash(type) {
 function draw() {
   let sx = 0, sy = 0;
   if (shake > 0) { sx = (Math.random() - .5) * 24 * shake; sy = (Math.random() - .5) * 24 * shake; shake = Math.max(0, shake - .03); }
-  const roll = -vx / 2600, bob = running && py <= gH + .5 ? Math.sin(t0 / 90) * Math.min(3, speed / 150) : 0;
+  const roll = Math.max(-.05, Math.min(.05, -vx / 4000)), bob = running && py <= gH + .5 ? Math.sin(t0 / 90) * Math.min(3, speed / 150) : 0;
   g.save(); g.translate(W / 2 + sx, H / 2 + sy + bob); g.rotate(roll); g.translate(-W / 2, -H / 2);
   const hz = horizon();
   let gr = g.createLinearGradient(0, -100, 0, hz); gr.addColorStop(0, "#0b3b8c"); gr.addColorStop(1, "#8fc1ff");
@@ -189,17 +214,18 @@ function draw() {
   for (let z = step - off; z < FAR; z += step) { const p = proj(0, z); if (p.y > H + 40) continue; g.globalAlpha = Math.min(1, 300 / z); g.beginPath(); g.moveTo(-W, p.y); g.lineTo(W * 2, p.y); g.stroke(); }
   g.globalAlpha = 1; g.strokeStyle = "rgba(20,99,243,.22)"; g.lineWidth = 3;
   [-1.5, -.5, .5, 1.5].forEach(m => { const a = proj(m * LANE, 3), b = proj(m * LANE, FAR); g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke(); });
-  // gondola cable overhead along each lane
-  g.strokeStyle = "rgba(30,40,60,.55)"; g.lineWidth = 2;
-  [0, 1, 2].forEach(l => { const a = proj(laneX(l), 3, 52), b = proj(laneX(l), FAR, 52); g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke(); });
   // everything, far to near
   const items = [...decor.map(o => ({ o, z: o.z })), ...obs.map(o => ({ o, z: o.z })), ...coins.map(o => ({ o, z: o.z, coin: 1 }))].sort((a, b) => b.z - a.z);
-  items.forEach(({ o, coin }) => { g.globalAlpha = Math.min(1, (FAR - o.z) / 250); if (coin) drawCoin(o); else if (o.type === "gondola") drawGondola(o); else drawObs(o); });
+  items.forEach(({ o, coin }) => { g.globalAlpha = Math.min(1, (FAR - o.z) / 250); if (coin) drawCoin(o); else if (o.type === "gondola") drawGondola(o); else if (o.type === "kicker") drawKicker(o); else if (o.type === "zip") drawZip(o); else drawObs(o); });
   g.globalAlpha = 1;
   g.fillStyle = "rgba(255,255,255,.9)";
   flakes.forEach(f => { const k = 1 / f.z; const x = W / 2 + f.x * W * .5 * k, y = H * .45 + f.y * H * .5 * k; if (x < -20 || x > W + 20 || y < -20 || y > H + 20) return; g.beginPath(); g.arc(x, y, Math.min(5, .8 * k), 0, 7); g.fill(); });
   g.restore();
   drawSled();
+  if (zipping) { const hx = W / 2, hy = H * .08;
+    g.fillStyle = "#1d2433"; g.fillRect(hx - 60, hy - 4, 120, 10); g.strokeStyle = "#1d2433"; g.lineWidth = 4; g.beginPath(); g.moveTo(hx, hy - 4); g.lineTo(hx, -10); g.stroke();
+    [-1, 1].forEach(sd => { g.fillStyle = "#1463f3"; g.beginPath(); g.ellipse(hx + sd * 38, hy + 2, 22, 16, 0, 0, 7); g.fill(); g.fillStyle = "#0b3b8c"; g.fillRect(hx + sd * 38 - 16, hy + 14, 32, 40); });
+    sparks.forEach(p => { g.fillStyle = `rgba(255,${180 + Math.random() * 60 | 0},90,${p.t * 2.2})`; g.fillRect(hx + p.x, hy - 6 + p.y, 3, 3); }); }
   pops.forEach(p => { g.globalAlpha = Math.min(1, p.t * 2); g.fillStyle = "#fff"; g.strokeStyle = "#0b3b8c"; g.lineWidth = 6; g.font = "30px Bungee, Impact, sans-serif"; g.textAlign = "center";
     const y = H * .42 - (1 - p.t) * 40; g.strokeText(p.txt, W / 2, y); g.fillText(p.txt, W / 2, y); g.globalAlpha = 1; });
 }
@@ -222,14 +248,28 @@ function drawGondola(o) {
   // roof
   quad(proj(x - hw, z0, h), proj(x + hw, z0, h), proj(x + hw, z1, h), proj(x - hw, z1, h), "#e7eef7");
   for (let c = 1; c < o.cars; c++) { const zc = o.z + c * CAB.seg; if (zc < 4) continue; const a = proj(x - hw, zc, h), b = proj(x + hw, zc, h); g.strokeStyle = "#9fb2c9"; g.lineWidth = 2; g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke(); }
-  // hanger arms up to the cable
-  for (let c = 0; c < o.cars; c++) { const zc = o.z + (c + .5) * CAB.seg; if (zc < 4) continue; const a = proj(x, zc, h), b = proj(x, zc, 52); g.strokeStyle = "#2a3346"; g.lineWidth = Math.max(1.5, a.k * 1.2); g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke(); }
   // front face with a big windshield
   if (o.z > 3) { const p = (u, v) => proj(x + u * hw, o.z, v * h);
     quad(p(-1, 0), p(1, 0), p(1, 1), p(-1, 1), o.hue);
     quad(p(-.75, .4), p(.75, .4), p(.75, .88), p(-.75, .88), "#bfe0ff");
     quad(p(-.75, .4), p(-.2, .4), p(.1, .88), p(-.75, .88), "rgba(255,255,255,.35)");
     quad(p(-1, 0), p(1, 0), p(1, .12), p(-1, .12), shade(o.hue, -.35)); }
+}
+function drawKicker(o) {
+  const x = laneX(o.lane), hw = CAB.w / 2, z0 = Math.max(3, o.z), z1 = o.z + KICK.len; if (z1 < 3) return;
+  const h0 = KICK.h * (z0 - o.z) / KICK.len;
+  quad(proj(x - hw, z1, 0), proj(x - hw, z1, KICK.h), proj(x + hw, z1, KICK.h), proj(x + hw, z1, 0), "#b9d3f2");
+  quad(proj(x - hw, z0, h0), proj(x + hw, z0, h0), proj(x + hw, z1, KICK.h), proj(x - hw, z1, KICK.h), "#f7fbff");
+  const a = proj(x - hw, z1, KICK.h), b = proj(x + hw, z1, KICK.h); g.strokeStyle = "#1463f3"; g.lineWidth = Math.max(2, a.k * 1.2); g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke();
+  for (let i = 0; i < 3; i++) { const zz = o.z + KICK.len * (.25 + i * .25); if (zz < 4) continue; const c = proj(x, zz, KICK.h * (zz - o.z) / KICK.len); g.fillStyle = "#1463f3"; g.beginPath(); g.moveTo(c.x, c.y - 3 * c.k); g.lineTo(c.x + 3 * c.k, c.y + 1.5 * c.k); g.lineTo(c.x - 3 * c.k, c.y + 1.5 * c.k); g.fill(); }
+}
+function drawZip(o) {
+  const x = laneX(o.lane), z0 = Math.max(3, o.z), z1 = o.z + o.len; if (z1 < 3) return;
+  [o.z, z1].forEach(zt => { if (zt < 4) return; const a = proj(x + CAB.w * .7, zt, 0), b = proj(x + CAB.w * .7, zt, ZIP + 6), c = proj(x, zt, ZIP + 6);
+    g.strokeStyle = "#5e6b7d"; g.lineWidth = Math.max(2, a.k * 2.2); g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.lineTo(c.x, c.y); g.stroke(); });
+  const a = proj(x, z0, ZIP), b = proj(x, z1, ZIP);
+  g.strokeStyle = "#1d2433"; g.lineWidth = Math.max(1.5, a.k * .9); g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke();
+  g.strokeStyle = "rgba(124,196,255,.7)"; g.lineWidth = Math.max(1, a.k * .35); g.stroke();
 }
 function shade(hex, f) { const n = parseInt(hex.slice(1), 16); let r = n >> 16, gg = n >> 8 & 255, b = n & 255; const m = v => Math.max(0, Math.min(255, Math.round(v * (1 + f)))); return `rgb(${m(r)},${m(gg)},${m(b)})`; }
 function drawCoin(c) {
@@ -278,7 +318,7 @@ function drawTree(o, x, y, k) {
   g.fillStyle = "#ffffff"; g.beginPath(); g.ellipse(x, y - h * .99, w * .07, h * .03, 0, 0, 7); g.fill();
 }
 function drawSled() {
-  const cx = W / 2 + vx * .12, cy = H + H * .08 + Math.min(12, Math.max(0, py - gH) * .8), rx = Math.min(W * .62, H * .75), ry = rx * .42, tilt = vx / 700;
+  const cx = W / 2 + Math.max(-30, Math.min(30, vx * .08)), cy = H + H * .08 + Math.min(12, Math.max(0, py - gH) * .8), rx = Math.min(W * .62, H * .75), ry = rx * .42, tilt = Math.max(-.08, Math.min(.08, vx / 2500));
   g.save(); g.translate(cx, cy); g.rotate(tilt);
   // saucer body
   let gr = g.createRadialGradient(0, -ry * .3, ry * .2, 0, 0, rx); gr.addColorStop(0, "#ff8a7e"); gr.addColorStop(1, "#c9362d");
