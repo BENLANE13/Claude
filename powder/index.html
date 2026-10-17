@@ -25,12 +25,11 @@ kbd { background: rgba(255,255,255,.15); border-radius: 5px; padding: 1px 6px; }
 </style>
 
 <canvas id="c"></canvas>
-<div class="hud"><div><small>DISTANCE</small><b id="score">0 m</b></div><div style="text-align:right"><small>BEST</small><b id="best">0 m</b></div></div>
-<button id="jump" class="jump" hidden aria-label="Jump">JUMP</button>
+<div class="hud"><div><small>DISTANCE</small><b id="score">0 m</b></div><div style="text-align:center"><small>BLUE COINS</small><b id="coins" style="color:#7cc4ff">0</b></div><div style="text-align:right"><small>BEST</small><b id="best">0 m</b></div></div>
 <div class="screen" id="start"><div class="card">
   <h1>Treeline Run</h1>
-  <p>Ride a saucer sled straight down the mountain. Dodge trees and rocks. The longer you ride, the faster it gets and the higher your score.</p>
-  <p><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd> to steer · <kbd>Space</kbd> / <kbd>↑</kbd> to jump over rocks · on a phone, hold either side to steer and tap JUMP</p>
+  <p>Sled down the mountain in three lanes. Jump rocks, dodge trees, ride ramps up onto parked gondola cabins and hop between their roofs, and grab every blue coin.</p>
+  <p><kbd>←</kbd> <kbd>→</kbd> switch lanes · <kbd>Space</kbd> / <kbd>↑</kbd> jump · on a phone, swipe left/right, swipe up or tap to jump</p>
   <button id="go">Drop in</button>
 </div></div>
 <div class="screen" id="over" hidden><div class="card">
@@ -47,43 +46,71 @@ const cv = document.getElementById("c"), g = cv.getContext("2d");
 let W, H, dpr;
 function size() { dpr = devicePixelRatio || 1; W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0); }
 addEventListener("resize", size); size();
-let best = 0; try { best = +localStorage.getItem("treeline-best") || 0; } catch (e) {}
 const $ = id => document.getElementById(id);
+let best = 0, bestCoins = 0;
+try { best = +localStorage.getItem("treeline-best") || 0; bestCoins = +localStorage.getItem("treeline-coins") || 0; } catch (e) {}
 $("best").textContent = best + " m";
-const keys = { l: false, r: false };
-addEventListener("keydown", e => { if (["ArrowLeft", "a", "A"].includes(e.key)) keys.l = true; if (["ArrowRight", "d", "D"].includes(e.key)) keys.r = true;
-  if ((e.key === " " || e.key === "Enter") && !running) { e.preventDefault(); start(); return; }
-  if ([" ", "ArrowUp", "w", "W"].includes(e.key)) { e.preventDefault(); jump(); } });
-function jump() { if (running && jy <= .01) { jv = JUMPV; } }
-addEventListener("keyup", e => { if (["ArrowLeft", "a", "A"].includes(e.key)) keys.l = false; if (["ArrowRight", "d", "D"].includes(e.key)) keys.r = false; });
-const touches = new Map();
-const syncTouch = () => { keys.l = [...touches.values()].some(x => x < W / 2); keys.r = [...touches.values()].some(x => x >= W / 2); };
-cv.addEventListener("pointerdown", e => { touches.set(e.pointerId, e.clientX); syncTouch(); });
-cv.addEventListener("pointermove", e => { if (touches.has(e.pointerId)) { touches.set(e.pointerId, e.clientX); syncTouch(); } });
-["pointerup", "pointercancel", "pointerleave"].forEach(t => cv.addEventListener(t, e => { touches.delete(e.pointerId); syncTouch(); }));
 
-const FAR = 1400, CAMH = 14, LANE = 260, SLOPE = .15, GRAV = 190, JUMPV = 72;   // world units
-let running = false, obs, flakes, camX, vx, speed, dist, last, spawnZ, shake, spin, t0 = 0, jy = 0, jv = 0, pops = [];
+// world: 3 lanes like a runner game; z = distance ahead of you, h = height above the snow
+const FAR = 1400, CAMH = 14, SLOPE = .15, GRAV = 210, JUMPV = 92, LANE = 34, PZ = 9;
+const CAB = { h: 17, w: 24, seg: 46 };   // gondola cabin: height, width, length of one car
+const RAMP = 34;
+let running = false, obs, decor, coins, flakes, pops, lane, camX, vx, speed, dist, nCoins, last, spawnZ, decorZ, shake, spin, py, pv, gH, t0 = 0;
+const laneX = l => (l - 1) * LANE;
 const horizon = () => H * .27;
-const crest = () => horizon() + SLOPE * focal();   // where the slope drops out of sight
 const focal = () => Math.min(W, H * 1.2) * .9;
-function proj(x, z) { const f = focal() / z; return { x: W / 2 + (x - camX) * f, y: horizon() + (CAMH + jy + z * SLOPE) * f, k: f }; }
+function proj(x, z, h = 0) { const f = focal() / z; return { x: W / 2 + (x - camX) * f, y: horizon() + (CAMH + py - h + z * SLOPE) * f, k: f }; }
+
+// controls: arrows/A-D switch lanes, up/W/space jump; on touch, swipe left/right/up or tap to jump
+function move(d) { if (!running) return; const nl = Math.max(0, Math.min(2, lane + d)); if (nl === lane) return;
+  if (blockedAt(nl)) { shake = .35; pops.push({ txt: "BONK", t: .6 }); return; } lane = nl; }
+function jump() { if (running && py <= gH + .5) pv = JUMPV; }
+addEventListener("keydown", e => {
+  if (!running && (e.key === " " || e.key === "Enter")) { e.preventDefault(); start(); return; }
+  if (e.repeat) return;
+  if (["ArrowLeft", "a", "A"].includes(e.key)) move(-1);
+  if (["ArrowRight", "d", "D"].includes(e.key)) move(1);
+  if ([" ", "ArrowUp", "w", "W"].includes(e.key)) { e.preventDefault(); jump(); }
+});
+let sw = null;
+cv.addEventListener("pointerdown", e => { sw = { x: e.clientX, y: e.clientY, used: false }; });
+cv.addEventListener("pointermove", e => { if (!sw || sw.used) return; const dx = e.clientX - sw.x, dy = e.clientY - sw.y;
+  if (Math.abs(dx) > 30 && Math.abs(dx) > Math.abs(dy)) { move(dx > 0 ? 1 : -1); sw.used = true; } else if (dy < -30) { jump(); sw.used = true; } });
+cv.addEventListener("pointerup", () => { if (sw && !sw.used) jump(); sw = null; });
+
 function reset() {
-  obs = []; pops = []; jy = 0; jv = 0; camX = 0; vx = 0; speed = 160; dist = 0; spawnZ = 0; shake = 0; spin = 0;
+  obs = []; decor = []; coins = []; pops = []; lane = 1; camX = 0; vx = 0; speed = 150; dist = 0; nCoins = 0; spawnZ = 260; decorZ = 0; shake = 0; spin = 0; py = 0; pv = 0; gH = 0;
   flakes = Array.from({ length: 90 }, () => ({ x: Math.random() * 2 - 1, y: Math.random() * 2 - 1, z: Math.random() }));
-  for (let z = 350; z < FAR; z += 95) spawnRow(z, true);
+  for (let z = 40; z < FAR; z += 30) addDecor(z);
+  coinLine(1, 120, 6, 0);
 }
-function spawnRow(z, easy) {
-  const n = easy ? 1 : 1 + Math.floor(Math.random() * Math.min(3, 1.5 + dist / 1500));
-  for (let i = 0; i < n; i++) {
-    const r = Math.random(), type = r < .65 ? "tree" : r < .92 ? "rock" : "bump";
-    obs.push({ x: camX + (Math.random() * 2 - 1) * LANE, z: z + Math.random() * 30, type, s: type === "tree" ? 9 + Math.random() * 7 : type === "rock" ? 4 + Math.random() * 4 : 6, seed: Math.random() });
+const rnd = (a, b) => a + Math.random() * (b - a), pick = a => a[Math.floor(Math.random() * a.length)];
+function coinLine(l, z, n, h, arc) { for (let i = 0; i < n; i++) coins.push({ lane: l, z: z + i * 16, h: h + 4 + (arc ? Math.sin(i / (n - 1) * Math.PI) * 14 : 0), got: false }); }
+function addDecor(z) { [-1, 1].forEach(sd => { if (Math.random() < .7) decor.push({ type: "tree", x: sd * (LANE * 1.7 + rnd(0, 160)), z: z + rnd(0, 25), s: rnd(11, 19), seed: Math.random() }); }); }
+// one "chunk" of obstacles; always leaves at least one lane you can get through
+function spawnChunk(z) {
+  const r = Math.random(), free = Math.floor(Math.random() * 3);
+  if (r < .4) {
+    // gondola cabins parked on the slope; ramps of packed snow let you ride up onto the roofs
+    const lanes = [0, 1, 2].filter(l => l !== free || Math.random() < .35);
+    let longest = 0;
+    lanes.forEach(l => { const cars = 1 + Math.floor(Math.random() * 3), len = cars * CAB.seg, zz = z + rnd(0, 30);
+      const ramp = Math.random() < .55; obs.push({ type: "gondola", lane: l, z: zz, len, cars, ramp, hue: pick(["#1463f3", "#0b3b8c", "#c9362d", "#2f6fd6"]) });
+      if (Math.random() < .7) coinLine(l, zz + 6, Math.floor(len / 16), CAB.h);
+      longest = Math.max(longest, zz - z + len + (ramp ? RAMP : 0)); });
+    if (lanes.length === 3) { const l = pick([0, 1, 2]); const o = obs[obs.length - 3 + l]; o.ramp = true; }
+    return longest;
   }
-  // keep the edges lined with forest
-  if (Math.random() < .5) obs.push({ x: camX + (Math.random() < .5 ? -1 : 1) * (LANE + 40 + Math.random() * 200), z, type: "tree", s: 12 + Math.random() * 8 });
+  if (r < .75) {
+    [0, 1, 2].filter(l => l !== free).forEach(l => { if (Math.random() < .75) obs.push(Math.random() < .55 ? { type: "rock", lane: l, z, s: rnd(5, 7) } : { type: "tree", lane: l, z, s: rnd(10, 14), seed: Math.random() }); });
+    const rockLane = obs.filter(o => o.z === z && o.type === "rock").map(o => o.lane);
+    if (rockLane.length && Math.random() < .6) coinLine(rockLane[0], z - 40, 6, 0, true); else coinLine(free, z - 30, 5, 0);
+    return 40;
+  }
+  coinLine(Math.floor(Math.random() * 3), z, 8, 0);
+  return 130;
 }
-$("jump").addEventListener("pointerdown", e => { e.preventDefault(); e.stopPropagation(); jump(); });
-function start() { reset(); running = true; $("start").hidden = true; $("over").hidden = true; $("jump").hidden = false; last = performance.now(); requestAnimationFrame(loop); }
+function start() { reset(); running = true; $("start").hidden = true; $("over").hidden = true; last = performance.now(); requestAnimationFrame(loop); }
 $("go").onclick = start; $("again").onclick = start;
 function loop(t) {
   const dt = Math.min(.035, (t - last) / 1000); last = t; t0 = t;
@@ -91,100 +118,135 @@ function loop(t) {
   draw();
   if (running || shake > 0) requestAnimationFrame(loop);
 }
+// height of whatever is under you in a lane at depth PZ (snow, ramp or cabin roof)
+function groundAt(l) {
+  let h = 0;
+  for (const o of obs) { if (o.type !== "gondola" || o.lane !== l) continue;
+    if (PZ >= o.z && PZ <= o.z + o.len) h = Math.max(h, CAB.h);
+    else if (o.ramp && PZ >= o.z - RAMP && PZ < o.z) h = Math.max(h, CAB.h * (1 - (o.z - PZ) / RAMP)); }
+  return h;
+}
+function blockedAt(l) { const h = groundAt(l); return h > py + 3; }
 function update(dt) {
   speed = Math.min(480, 150 + dist * .12);
-  const steer = (keys.r ? 1 : 0) - (keys.l ? 1 : 0);
-  vx += steer * 520 * dt; vx *= Math.pow(.08, dt); vx = Math.max(-150, Math.min(150, vx));
-  camX += vx * dt;
-  if (jy > 0 || jv > 0) { jv -= GRAV * dt; jy += jv * dt; if (jy <= 0) { jy = 0; jv = 0; shake = Math.max(shake, .25); } }
-  pops.forEach(p => p.t -= dt); pops = pops.filter(p => p.t > 0);
-  spin += (vx / 150) * dt * 1.5 + dt * .4;     // saucer slowly rotates
-  const dz = speed * dt; dist += dz / 8;
-  obs.forEach(o => o.z -= dz); obs = obs.filter(o => o.z > 2);
-  spawnZ -= dz; const gap = Math.max(40, 95 - dist / 80);
-  while (spawnZ < 0) { spawnRow(FAR, false); spawnZ += gap; }
+  const tx = laneX(lane); vx = (tx - camX) * 12; camX += vx * dt;
+  const dz = speed * dt; dist += dz / 8; spin += dt * .5 + vx * dt * .004;
+  [obs, decor, coins].forEach(a => a.forEach(o => o.z -= dz));
+  obs = obs.filter(o => o.z + (o.len || 0) > -10); decor = decor.filter(o => o.z > 2); coins = coins.filter(c => c.z > 2 && !c.gone);
+  spawnZ -= dz; while (spawnZ < 0) { const used = spawnChunk(FAR); spawnZ += used + Math.max(110, 230 - dist / 40); }
+  decorZ -= dz; while (decorZ < 0) { addDecor(FAR); decorZ += 30; }
   flakes.forEach(f => { f.z -= dt * (speed / 500); if (f.z < .05) { f.z = 1; f.x = Math.random() * 2 - 1; f.y = Math.random() * 2 - 1; } });
-  for (const o of obs) {
-    if (o.z > 14 || o.z < 4) continue;
-    const dx = Math.abs(o.x - camX);
-    if (o.type === "bump") { if (dx < 8 && jy < 1) { dist += 2; if (!o.hit) { o.hit = 1; jv = JUMPV * .55; jy = .1; } } continue; }
-    if (dx < (o.type === "tree" ? o.s * .35 : o.s * .9) + 4) {
-      if (o.type === "rock" && jy > o.s * 1.1) { if (!o.cleared) { o.cleared = 1; dist += 15; pops.push({ txt: "AIR! +15 m", t: 1 }); } continue; }
-      if (o.type === "tree" && jy > o.s * 3.4) continue;
-      return crash(o.type);
-    }
-  }
-  $("score").textContent = Math.floor(dist) + " m";
+  pops.forEach(p => p.t -= dt); pops = pops.filter(p => p.t > 0);
+  // vertical: gravity, landing on snow, ramps and roofs
+  const ng = groundAt(lane);
+  if (ng > py + 3) return crash("gondola");
+  pv -= GRAV * dt; py += pv * dt;
+  if (py <= ng) { if (pv < -60) shake = Math.max(shake, .2); py = ng; pv = Math.max(0, pv); if (ng > gH + .2 && ng >= CAB.h - .1 && gH < CAB.h - .1) pops.push({ txt: "ON THE GONDOLA!", t: .9 }); }
+  gH = ng;
+  for (const o of obs) { if (o.lane !== lane || o.type === "gondola") continue; if (Math.abs(o.z - PZ) > 5) continue;
+    if (o.type === "rock") { if (py > o.s * 1.3) { if (!o.cleared) { o.cleared = 1; dist += 10; pops.push({ txt: "AIR! +10 m", t: .8 }); } } else return crash("rock"); }
+    if (o.type === "tree" && py < 30) return crash("tree"); }
+  for (const c of coins) { if (c.got || c.lane !== lane || Math.abs(c.z - PZ) > 6 || Math.abs(c.h - (py + 6)) > 10) continue; c.got = true; c.gone = true; nCoins++; }
+  $("score").textContent = Math.floor(dist) + " m"; $("coins").textContent = nCoins;
 }
 function crash(type) {
-  running = false; shake = 1; $("jump").hidden = true;
-  const d = Math.floor(dist), nb = d > best;
-  if (nb) { best = d; try { localStorage.setItem("treeline-best", best); } catch (e) {} }
+  running = false; shake = 1;
+  const d = Math.floor(dist), nb = d > best; if (nb) best = d; if (nCoins > bestCoins) bestCoins = nCoins;
+  try { localStorage.setItem("treeline-best", best); localStorage.setItem("treeline-coins", bestCoins); } catch (e) {}
   $("best").textContent = best + " m";
-  $("crashTitle").textContent = type === "tree" ? "Tree hugger!" : "Rocked!";
-  $("crashWhy").textContent = type === "tree" ? "Your sled met a pine." : "You found a rock. Jump next time!";
+  $("crashTitle").textContent = type === "tree" ? "Tree hugger!" : type === "rock" ? "Rocked!" : "Gondola'd!";
+  $("crashWhy").textContent = type === "tree" ? "Your sled met a pine." : type === "rock" ? "Jump over rocks next time." : "You slammed into a gondola cabin. Find a ramp, or switch lanes.";
   $("final").textContent = d + " m";
-  $("bestLine").textContent = nb ? "New personal best!" : `Best: ${best} m`;
+  $("bestLine").textContent = `${nCoins} blue coins · ` + (nb ? "New personal best!" : `Best: ${best} m · most coins ${bestCoins}`);
   setTimeout(() => { $("over").hidden = false; $("again").focus(); }, 450);
 }
 function draw() {
   let sx = 0, sy = 0;
   if (shake > 0) { sx = (Math.random() - .5) * 24 * shake; sy = (Math.random() - .5) * 24 * shake; shake = Math.max(0, shake - .03); }
-  const roll = -vx / 1400, bob = running ? Math.sin(t0 / 90) * Math.min(3, speed / 150) : 0;
+  const roll = -vx / 2600, bob = running && py <= gH + .5 ? Math.sin(t0 / 90) * Math.min(3, speed / 150) : 0;
   g.save(); g.translate(W / 2 + sx, H / 2 + sy + bob); g.rotate(roll); g.translate(-W / 2, -H / 2);
   const hz = horizon();
-  // sky
   let gr = g.createLinearGradient(0, -100, 0, hz); gr.addColorStop(0, "#0b3b8c"); gr.addColorStop(1, "#8fc1ff");
   g.fillStyle = gr; g.fillRect(-W, -H, W * 3, hz + H);
-  // distant peaks (parallax with steering)
   const par = -camX * .15;
   [["#9cc2f5", .55, 0], ["#5b93ea", .35, 300]].forEach(([c, hgt, off]) => {
     g.fillStyle = c; g.beginPath(); g.moveTo(-W, hz);
     for (let x = -W; x <= W * 2; x += 60) { const n = Math.sin((x + par + off) / 140) * .5 + Math.sin((x + par + off) / 53) * .3; g.lineTo(x, hz - (60 + n * 50) * hgt * (H / 600)); }
-    g.lineTo(W * 2, hz); g.fill();
-  });
-  // valley far below: you only see it because the slope falls away
+    g.lineTo(W * 2, hz); g.fill(); });
   const cr = proj(camX, FAR).y;
   gr = g.createLinearGradient(0, hz, 0, cr); gr.addColorStop(0, "#a9cbf3"); gr.addColorStop(1, "#7aa9e6");
   g.fillStyle = gr; g.fillRect(-W, hz, W * 3, cr - hz + 2);
-  g.fillStyle = "#c6dcf7"; g.beginPath(); g.ellipse(W / 2 + par * 1.3 + 120, hz + (cr - hz) * .55, W * .14, (cr - hz) * .12, 0, 0, 7); g.fill();
+  g.fillStyle = "#c6dcf7"; g.beginPath(); g.ellipse(W / 2 + par * 1.3 + 120, hz + (cr - hz) * .55, W * .14, Math.max(1, (cr - hz) * .12), 0, 0, 7); g.fill();
   g.fillStyle = "#3f6fb0";
-  for (let i = 0; i < 140; i++) { const vx0 = ((i * 53) % 157) / 157, vy0 = ((i * 31) % 89) / 89;
-    const x = -W * .5 + vx0 * W * 2 + par * 1.3, y = hz + 6 + vy0 * (cr - hz - 10), hh = 3 + vy0 * 6;
+  for (let i = 0; i < 140; i++) { const a = ((i * 53) % 157) / 157, b = ((i * 31) % 89) / 89, x = -W * .5 + a * W * 2 + par * 1.3, y = hz + 6 + b * (cr - hz - 10), hh = 3 + b * 6;
     g.beginPath(); g.moveTo(x, y - hh); g.lineTo(x + hh * .4, y); g.lineTo(x - hh * .4, y); g.fill(); }
-  // snow slope dropping away from you
   gr = g.createLinearGradient(0, cr, 0, H); gr.addColorStop(0, "#dbeafc"); gr.addColorStop(.25, "#c4dbf7"); gr.addColorStop(1, "#ffffff");
   g.fillStyle = gr; g.fillRect(-W, cr, W * 3, H * 2);
   g.strokeStyle = "rgba(255,255,255,.9)"; g.lineWidth = 3; g.beginPath(); g.moveTo(-W, cr); g.lineTo(W * 2, cr); g.stroke();
-  // moving grooming lines show speed
+  // grooming lines + groomed lane edges
   g.strokeStyle = "rgba(94,160,242,.18)"; g.lineWidth = 2;
   const step = 40, off = (dist * 8) % step;
   for (let z = step - off; z < FAR; z += step) { const p = proj(0, z); if (p.y > H + 40) continue; g.globalAlpha = Math.min(1, 300 / z); g.beginPath(); g.moveTo(-W, p.y); g.lineTo(W * 2, p.y); g.stroke(); }
+  g.globalAlpha = 1; g.strokeStyle = "rgba(20,99,243,.22)"; g.lineWidth = 3;
+  [-1.5, -.5, .5, 1.5].forEach(m => { const a = proj(m * LANE, 3), b = proj(m * LANE, FAR); g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke(); });
+  // gondola cable overhead along each lane
+  g.strokeStyle = "rgba(30,40,60,.55)"; g.lineWidth = 2;
+  [0, 1, 2].forEach(l => { const a = proj(laneX(l), 3, 52), b = proj(laneX(l), FAR, 52); g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke(); });
+  // everything, far to near
+  const items = [...decor.map(o => ({ o, z: o.z })), ...obs.map(o => ({ o, z: o.z })), ...coins.map(o => ({ o, z: o.z, coin: 1 }))].sort((a, b) => b.z - a.z);
+  items.forEach(({ o, coin }) => { g.globalAlpha = Math.min(1, (FAR - o.z) / 250); if (coin) drawCoin(o); else if (o.type === "gondola") drawGondola(o); else drawObs(o); });
   g.globalAlpha = 1;
-  for (let lx = -3; lx <= 3; lx++) { const a = proj(camX + lx * 120 - ((camX % 120) + 120) % 120, 4), b = proj(camX + lx * 120 - ((camX % 120) + 120) % 120, FAR); g.strokeStyle = "rgba(94,160,242,.10)"; g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke(); }
-  // obstacles far to near
-  [...obs].sort((a, b) => b.z - a.z).forEach(o => { const p = proj(o.x, o.z); if (p.x < -400 || p.x > W + 400) return; g.globalAlpha = Math.min(1, (FAR - o.z) / 250); drawObs(o, p); });
-  g.globalAlpha = 1;
-  // snow flying past
   g.fillStyle = "rgba(255,255,255,.9)";
   flakes.forEach(f => { const k = 1 / f.z; const x = W / 2 + f.x * W * .5 * k, y = H * .45 + f.y * H * .5 * k; if (x < -20 || x > W + 20 || y < -20 || y > H + 20) return; g.beginPath(); g.arc(x, y, Math.min(5, .8 * k), 0, 7); g.fill(); });
   g.restore();
   drawSled();
-  pops.forEach(p => { g.globalAlpha = Math.min(1, p.t * 2); g.fillStyle = "#fff"; g.strokeStyle = "#0b3b8c"; g.lineWidth = 6; g.font = "32px Bungee, Impact, sans-serif"; g.textAlign = "center";
+  pops.forEach(p => { g.globalAlpha = Math.min(1, p.t * 2); g.fillStyle = "#fff"; g.strokeStyle = "#0b3b8c"; g.lineWidth = 6; g.font = "30px Bungee, Impact, sans-serif"; g.textAlign = "center";
     const y = H * .42 - (1 - p.t) * 40; g.strokeText(p.txt, W / 2, y); g.fillText(p.txt, W / 2, y); g.globalAlpha = 1; });
 }
-function drawObs(o, p) {
+function quad(a, b, c, d, fill) { g.fillStyle = fill; g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.lineTo(c.x, c.y); g.lineTo(d.x, d.y); g.closePath(); g.fill(); }
+function drawGondola(o) {
+  const x = laneX(o.lane), hw = CAB.w / 2, h = CAB.h;
+  const z0 = Math.max(3, o.z), z1 = o.z + o.len; if (z1 < 3) return;
+  // ramp of packed snow in front
+  if (o.ramp && o.z - RAMP > -RAMP) { const rz0 = Math.max(3, o.z - RAMP), rh0 = h * (1 - (o.z - rz0) / RAMP);
+    if (o.z > 3) { quad(proj(x - hw, rz0, rh0), proj(x + hw, rz0, rh0), proj(x + hw, o.z, h), proj(x - hw, o.z, h), "#f4f9ff");
+      g.strokeStyle = "rgba(94,160,242,.6)"; g.lineWidth = 2; g.stroke();
+      quad(proj(x - hw, rz0, 0), proj(x - hw, rz0, rh0), proj(x - hw, o.z, h), proj(x - hw, o.z, 0), "#cfe1f7");
+      quad(proj(x + hw, rz0, 0), proj(x + hw, rz0, rh0), proj(x + hw, o.z, h), proj(x + hw, o.z, 0), "#cfe1f7"); } }
+  // sides (only the ones facing you)
+  if (x - hw > camX) quad(proj(x - hw, z0, 0), proj(x - hw, z0, h), proj(x - hw, z1, h), proj(x - hw, z1, 0), shade(o.hue, -.25));
+  if (x + hw < camX) quad(proj(x + hw, z0, 0), proj(x + hw, z0, h), proj(x + hw, z1, h), proj(x + hw, z1, 0), shade(o.hue, -.25));
+  // side windows + car dividers
+  for (let c = 0; c < o.cars; c++) { const za = o.z + c * CAB.seg + 6, zb = o.z + (c + 1) * CAB.seg - 6; if (zb < 4) continue;
+    const zA = Math.max(4, za); [[x - hw, x - hw > camX], [x + hw, x + hw < camX]].forEach(([sx, vis]) => { if (vis) quad(proj(sx, zA, h * .45), proj(sx, zA, h * .85), proj(sx, zb, h * .85), proj(sx, zb, h * .45), "rgba(200,230,255,.75)"); }); }
+  // roof
+  quad(proj(x - hw, z0, h), proj(x + hw, z0, h), proj(x + hw, z1, h), proj(x - hw, z1, h), "#e7eef7");
+  for (let c = 1; c < o.cars; c++) { const zc = o.z + c * CAB.seg; if (zc < 4) continue; const a = proj(x - hw, zc, h), b = proj(x + hw, zc, h); g.strokeStyle = "#9fb2c9"; g.lineWidth = 2; g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke(); }
+  // hanger arms up to the cable
+  for (let c = 0; c < o.cars; c++) { const zc = o.z + (c + .5) * CAB.seg; if (zc < 4) continue; const a = proj(x, zc, h), b = proj(x, zc, 52); g.strokeStyle = "#2a3346"; g.lineWidth = Math.max(1.5, a.k * 1.2); g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke(); }
+  // front face with a big windshield
+  if (o.z > 3) { const p = (u, v) => proj(x + u * hw, o.z, v * h);
+    quad(p(-1, 0), p(1, 0), p(1, 1), p(-1, 1), o.hue);
+    quad(p(-.75, .4), p(.75, .4), p(.75, .88), p(-.75, .88), "#bfe0ff");
+    quad(p(-.75, .4), p(-.2, .4), p(.1, .88), p(-.75, .88), "rgba(255,255,255,.35)");
+    quad(p(-1, 0), p(1, 0), p(1, .12), p(-1, .12), shade(o.hue, -.35)); }
+}
+function shade(hex, f) { const n = parseInt(hex.slice(1), 16); let r = n >> 16, gg = n >> 8 & 255, b = n & 255; const m = v => Math.max(0, Math.min(255, Math.round(v * (1 + f)))); return `rgb(${m(r)},${m(gg)},${m(b)})`; }
+function drawCoin(c) {
+  if (c.z < 3) return; const p = proj(laneX(c.lane), c.z, c.h), r = 3.6 * p.k, sq = Math.abs(Math.sin(t0 / 220 + c.z / 30));
+  g.fillStyle = "rgba(11,59,140,.15)"; const s = proj(laneX(c.lane), c.z, 0); g.beginPath(); g.ellipse(s.x, s.y, r, r * .25, 0, 0, 7); g.fill();
+  g.fillStyle = "#0b3b8c"; g.beginPath(); g.ellipse(p.x, p.y, r * Math.max(.18, sq), r, 0, 0, 7); g.fill();
+  g.fillStyle = "#3d8bff"; g.beginPath(); g.ellipse(p.x, p.y, r * Math.max(.12, sq) * .82, r * .82, 0, 0, 7); g.fill();
+  g.fillStyle = "rgba(255,255,255,.75)"; g.beginPath(); g.ellipse(p.x - r * .25 * sq, p.y - r * .3, r * .18 * Math.max(.2, sq), r * .3, 0, 0, 7); g.fill();
+}
+function drawObs(o) {
+  const p = proj(o.x != null ? o.x : laneX(o.lane), o.z); if (o.z < 3 || p.x < -400 || p.x > W + 400) return;
   const k = p.k, x = p.x, y = p.y;
   if (o.type === "tree") drawTree(o, x, y, k);
-  else if (o.type === "rock") {
-    const s = o.s * k;
+  else { const s = o.s * k;
     g.fillStyle = "#5e6b7d"; g.beginPath(); g.moveTo(x - s * 1.3, y); g.lineTo(x - s, y - s * .9); g.lineTo(x + s * .2, y - s * 1.3); g.lineTo(x + s * 1.2, y - s * .6); g.lineTo(x + s * 1.4, y); g.closePath(); g.fill();
     g.fillStyle = "#8a96a8"; g.beginPath(); g.moveTo(x - s, y - s * .9); g.lineTo(x + s * .2, y - s * 1.3); g.lineTo(x, y - s * .4); g.fill();
-    g.fillStyle = "#fff"; g.beginPath(); g.ellipse(x - s * .2, y - s * 1.05, s * .6, s * .2, -.2, 0, 7); g.fill();
-  } else {
-    g.fillStyle = "rgba(255,255,255,.95)"; g.beginPath(); g.ellipse(x, y, o.s * 1.6 * k, o.s * .35 * k, 0, 0, 7); g.fill();
-    g.strokeStyle = "rgba(94,160,242,.45)"; g.lineWidth = 2; g.stroke();
-  }
+    g.fillStyle = "#fff"; g.beginPath(); g.ellipse(x - s * .2, y - s * 1.05, s * .6, s * .2, -.2, 0, 7); g.fill(); }
 }
 function drawTree(o, x, y, k) {
   const h = o.s * 3.4 * k, w = o.s * 1.15 * k, R = i => { const v = Math.sin(o.seed * 9301 + i * 49.3) * 43758.5; return v - Math.floor(v); };
@@ -216,7 +278,7 @@ function drawTree(o, x, y, k) {
   g.fillStyle = "#ffffff"; g.beginPath(); g.ellipse(x, y - h * .99, w * .07, h * .03, 0, 0, 7); g.fill();
 }
 function drawSled() {
-  const cx = W / 2 + vx * .25, cy = H + H * .08 + jy * 1.6, rx = Math.min(W * .62, H * .75), ry = rx * .42, tilt = vx / 900;
+  const cx = W / 2 + vx * .12, cy = H + H * .08 + Math.min(12, Math.max(0, py - gH) * .8), rx = Math.min(W * .62, H * .75), ry = rx * .42, tilt = vx / 700;
   g.save(); g.translate(cx, cy); g.rotate(tilt);
   // saucer body
   let gr = g.createRadialGradient(0, -ry * .3, ry * .2, 0, 0, rx); gr.addColorStop(0, "#ff8a7e"); gr.addColorStop(1, "#c9362d");
