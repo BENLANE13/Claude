@@ -56,6 +56,10 @@ canvas#c { cursor: crosshair; }
 .fire { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); width: 86px; height: 86px; border-radius: 50%; margin: 0; padding: 0; background: rgba(201,54,45,.92); color: #fff; font-family: var(--f-display); font-weight: 400; font-size: 18px; display: none; touch-action: none; box-shadow: 0 6px 20px rgba(4,21,48,.4); }
 @media (pointer: coarse) { .fire { display: grid; place-items: center; } }
 .fire.swap[hidden] { display: none; }
+.fire.brake { width: 66px; height: 66px; font-size: 14px; bottom: calc(116px + env(safe-area-inset-bottom, 0px)); background: rgba(240,240,245,.92); color: #0b3b8c; }
+.paused { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(4,21,48,.55); text-align: center; z-index: 5; }
+.paused[hidden] { display: none; }
+#timer.low { color: #ff6b6b; }
 .fire.swap { width: 62px; height: 62px; font-size: 13px; bottom: calc(116px + env(safe-area-inset-bottom, 0px)); background: rgba(11,59,140,.92); }
 .prog { position: fixed; left: 50%; transform: translateX(-50%); top: calc(64px + env(safe-area-inset-top, 0px)); width: min(340px, 50vw); height: 8px; border-radius: 99px; background: rgba(4,21,48,.6); pointer-events: none; }
 .prog i { display: block; height: 100%; width: 0; border-radius: 99px; background: linear-gradient(90deg, #5ea0f2, #d8b45a); }
@@ -65,7 +69,7 @@ canvas#c { cursor: crosshair; }
 
 <canvas id="c"></canvas>
 <div class="hud">
-  <div class="box"><small>DISTANCE</small><b id="score">0 m</b></div>
+  <div class="box"><small>DISTANCE · TIME LEFT</small><b><span id="score">0 m</span> · <span id="timer">2:30</span></b></div>
   <div class="letters" id="letters" aria-label="Kappa Alpha Order letters collected"></div>
   <div class="box" style="text-align:right"><small>CHIPS · BEST</small><b class="chips"><span id="chips" style="color:#7cc4ff">0</span><span style="opacity:.5">·</span><span id="best">0 m</span></b></div>
 </div>
@@ -73,14 +77,17 @@ canvas#c { cursor: crosshair; }
 <div class="hpbox"><div class="row"><small>SHIELD</small><b id="shNum" style="color:#74c0fc">100</b></div><div class="hpbar"><i id="shBar" style="background:#3b9cff"></i></div><div class="row"><small>HEALTH</small><b id="hpNum">100</b></div><div class="hpbar"><i id="hpBar"></i></div><div class="row2"><span>WEAPON <b id="wep">ROCKET LAUNCHER</b></span><span>AMMO <b id="ammo">∞</b></span><span>ALIVE <b id="alive">12</b></span><span>ELIMS <b id="elims">0</b></span></div></div>
 <div class="feed" id="feed" aria-live="polite"></div>
 <button class="fire" id="fireBtn" aria-label="Fire">FIRE</button>
+<button class="fire brake" id="brakeBtn" aria-label="Stop">STOP</button>
+<div class="paused" id="paused" hidden><div><h2>Paused</h2><p>Press <kbd>P</kbd> or tap to keep riding. The clock is stopped.</p></div></div>
 <button class="fire swap" id="swapBtn" aria-label="Switch weapon" hidden>RPG</button>
 <div class="prog" aria-hidden="true"><i id="progBar"></i><span>BASE LODGE</span></div>
 
 <div class="screen" id="start"><div class="card">
   <h1>Kaspen</h1>
   <p>Shred the open mountain. Carve fresh powder under the gondola lines, hit kickers to land on the cables and ride them like a zipline, and collect the letters of <b style="color:var(--gold)">KAPPA ALPHA ORDER</b> in order to unlock the chest. Grab blue chips along the way.</p>
-  <p><b style="color:#fff">11 AI riders drop in with you.</b> You get 100 shield on top of 100 health and a rocket launcher with unlimited rockets. Trees block shots, hot cocoa heals, supply crates add shield. Reach the base lodge at 3,000 m or be the last rider standing to win.</p>
-  <p><kbd>←</kbd> <kbd>→</kbd> carve · <kbd>Space</kbd> jump / hop off the cable · aim with the mouse, click or hold <kbd>F</kbd> to fire<br>Phone: hold left or right side to carve, tap or swipe up to jump, hold FIRE to shoot (auto-aim)</p>
+  <p><b style="color:#fff">11 AI riders drop in with you.</b> You get 100 shield on top of 100 health and a rocket launcher with unlimited rockets. Trees block shots, hot cocoa heals, supply crates add shield. </p>
+  <p><b style="color:#ff6b6b">Like Squid Game:</b> cross the base lodge finish at 3,000 m before the clock hits zero or you're eliminated. Get shot down and you're out too. You can stop and go whenever you want, but the clock keeps running.</p>
+  <p><kbd>←</kbd> <kbd>→</kbd> carve · <kbd>Space</kbd> jump / hop off the cable · hold <kbd>↓</kbd> / <kbd>S</kbd> to stop · <kbd>P</kbd> pause · aim with the mouse, click or hold <kbd>F</kbd> to fire<br>Phone: hold left or right side to carve, tap or swipe up to jump, hold FIRE to shoot (auto-aim), hold STOP to stop</p>
   <button id="go">Drop in</button>
 </div></div>
 <div class="screen" id="over" hidden><div class="card strava">
@@ -115,7 +122,8 @@ const FAR = 1500, CAMH = 12, SLOPE = .15, PZ = 55, GRAV = 210, JUMPV = 92, FIELD
 const CABH = 46, KICK = { h: 8, len: 26, w: 26, v: 150 };
 let running = false, t0 = 0, last;
 let obs, decor, chips, cables, parts, trail, track, li, letterOut, chestOut, nChips, nChests, px, pvx, py, pv, camX, camY, speed, dist, time, topSpeed, onCable, cableCool, spinA, grab, shake, spawnZ, decorZ, cableZ, toastT;
-const FINISH = 3000;
+const FINISH = 3000, TIME_LIMIT = 150;
+let timeLeft = TIME_LIMIT, braking = false, paused = false, vel = 150, cruise = 150;
 let shield, sinceHit, weapon, rockets, bots, shots, dmgPops, hp, kills, dmgDealt, placed, won, hitCool, hitFlash, fireCd, firing = false, fireFlash, aimX = null, aimY = null, lockBot, killMarks;
 const isTouch = matchMedia("(pointer: coarse)").matches;
 const KIT_ME = { main: "#8c1d2c", dark: "#6e1522", pants: "#2b3a2f", acc: "#d8b45a", logo: "ΚΑ" };
@@ -133,9 +141,16 @@ addEventListener("keydown", e => {
   if (["ArrowRight", "d", "D"].includes(e.key)) keys.r = true;
   if ([" ", "ArrowUp", "w", "W"].includes(e.key)) { e.preventDefault(); if (!e.repeat) jump(); }
   if (["f", "F", "j", "J"].includes(e.key)) firing = true;
+  if (["ArrowDown", "s", "S"].includes(e.key)) { e.preventDefault(); braking = true; }
+  if ((e.key === "p" || e.key === "P" || e.key === "Escape") && running) togglePause();
   if (["q", "Q", "e", "E", "1", "2"].includes(e.key) && running && !e.repeat) swapWep();
 });
-addEventListener("keyup", e => { if (["ArrowLeft", "a", "A"].includes(e.key)) keys.l = false; if (["ArrowRight", "d", "D"].includes(e.key)) keys.r = false; if (["f", "F", "j", "J"].includes(e.key)) firing = false; });
+addEventListener("keyup", e => { if (["ArrowLeft", "a", "A"].includes(e.key)) keys.l = false; if (["ArrowRight", "d", "D"].includes(e.key)) keys.r = false; if (["f", "F", "j", "J"].includes(e.key)) firing = false; if (["ArrowDown", "s", "S"].includes(e.key)) braking = false; });
+function togglePause() { paused = !paused; $("paused").hidden = !paused; firing = false; if (!paused) last = performance.now(); }
+$("paused").addEventListener("pointerdown", () => { if (paused) togglePause(); });
+const bb = $("brakeBtn");
+bb.addEventListener("pointerdown", e => { e.preventDefault(); e.stopPropagation(); braking = true; });
+["pointerup", "pointercancel", "pointerleave"].forEach(n => bb.addEventListener(n, () => { braking = false; }));
 const fb = $("fireBtn");
 $("swapBtn").addEventListener("pointerdown", e => { e.preventDefault(); e.stopPropagation(); if (running) swapWep(); });
 fb.addEventListener("pointerdown", e => { e.preventDefault(); e.stopPropagation(); firing = true; });
@@ -164,7 +179,7 @@ function reset() {
   drawLetters();
   bots = NAMES.map((name, i) => ({ name, kit: KITS[i % KITS.length], x: rnd(-FIELD + 20, FIELD - 20), z: i < 3 ? 85 + i * 30 : rnd(140, 900), h: 0, pv: 0, vx: 0, wx: rnd(-150, 150), hp: 100, sh: 100, alive: true,
     cd: rnd(1.5, 3.2), pace: rnd(-.08, .08), think: rnd(0, 1.5), hitT: 0, fire: 0, bumpT: 0, kills: 0 }));
-  shots = []; dmgPops = []; killMarks = []; hp = 100; shield = 100; sinceHit = 99; weapon = "rpg"; rockets = Infinity; kills = 0; dmgDealt = 0; placed = 0; won = false; hitCool = 0; hitFlash = 0; fireCd = 0; fireFlash = 0; lockBot = null;
+  shots = []; dmgPops = []; killMarks = []; timeLeft = TIME_LIMIT; braking = false; paused = false; $("paused").hidden = true; vel = 150; cruise = 150; hp = 100; shield = 100; sinceHit = 99; weapon = "rpg"; rockets = Infinity; kills = 0; dmgDealt = 0; placed = 0; won = false; hitCool = 0; hitFlash = 0; fireCd = 0; fireFlash = 0; lockBot = null;
   $("feed").innerHTML = ""; updateHP(); updateAlive(); updateWep();
 }
 const aliveBots = () => bots.filter(b => b.alive).length;
@@ -193,7 +208,7 @@ function hurtBot(b, d, by, how) {
   else if (by) { by.kills++; addFeed(`${by.name} eliminated ${b.name}`); }
   else addFeed({ tree: `${b.name} found a tree well`, rock: `${b.name} hit a rock`, tower: `${b.name} clipped a lift tower` }[how] || `${b.name} wiped out`);
   updateAlive();
-  if (running && aliveBots() === 0) crash("win");
+  if (running && aliveBots() === 0) toast("LAST ONE LEFT · NOW BEAT THE CLOCK");
 }
 function fire(owner, tx, tz, th, spread, dmg, spd) {
   const o = owner === "me" ? { x: px + 2.5, z: PZ, h: py + 8 } : { x: owner.x + 2.5, z: owner.z, h: owner.h + 8 };
@@ -244,7 +259,9 @@ function updateBots(dt, base) {
     const foes = [...bots.filter(o => o.alive && o !== b), me].filter(o => Math.abs(o.z - b.z) < 380 && Math.abs(o.x - b.x) < 260);
     let foe = null, fd = 1e9; for (const o of foes) { const d = Math.hypot(o.x - b.x, o.z - b.z) * (o.me ? 1.35 : 1); if (d < fd) { fd = d; foe = o; } }
     if (b.think <= 0) { b.think = rnd(.8, 2); b.pace = Math.max(-.12, Math.min(.12, b.pace + rnd(-.06, .06))); b.wx = foe && Math.random() < .6 ? foe.x + rnd(-60, 60) : rnd(-FIELD + 20, FIELD - 20); }
-    b.z += (base * b.pace + (b.z > 900 ? -60 : b.z < 30 ? 60 : 0)) * dt;
+    b.z += (base * (1 + b.pace) - speed + (b.z > 900 && speed > 60 ? -60 : b.z < 30 && speed > 60 ? 60 : 0)) * dt;
+    if (b.z < -30) b.z = -30;
+    if (dist + (b.z - PZ) / 8 >= FINISH) { b.alive = false; b.safe = true; addFeed(`${b.name} crossed the finish`); updateAlive(); continue; }
     let avoid = 0;
     for (const o of obs) { if (o.type !== "tree" && o.type !== "rock" && o.type !== "tower") continue; const ahead = o.z - b.z; if (ahead < 0 || ahead > 70) continue;
       const r = o.type === "tree" ? o.s * .42 + 7 : o.type === "rock" ? o.s * 1.1 + 5 : 9;
@@ -296,7 +313,7 @@ function start() { reset(); running = true; $("start").hidden = true; $("over").
 $("go").onclick = start; $("again").onclick = start;
 function loop(t) {
   const dt = Math.min(.035, (t - last) / 1000); last = t; t0 = t;
-  if (running) update(dt);
+  if (running && !paused) update(dt);
   draw(dt);
   if (running || shake > 0) requestAnimationFrame(loop);
 }
@@ -309,7 +326,14 @@ function cableAt() { return cables.find(c => Math.abs(c.x - px) < 9 && PZ >= c.z
 
 function update(dt) {
   time += dt;
-  speed = Math.min(470, 150 + dist * .12) * (onCable ? 1.25 : 1);
+  cruise = Math.min(470, 150 + dist * .12);
+  const want = braking && !onCable ? 0 : cruise * (onCable ? 1.25 : 1);
+  vel += (want - vel) * Math.min(1, dt * (braking ? 2.6 : 1.1));
+  speed = vel;
+  timeLeft -= dt;
+  const tl = Math.max(0, Math.ceil(timeLeft)), te = $("timer"); te.textContent = `${Math.floor(tl / 60)}:${String(tl % 60).padStart(2, "0")}`; te.className = tl <= 20 ? "low" : "";
+  if (tl === 20 && !toastT) toast("20 SECONDS LEFT");
+  if (timeLeft <= 0) { crash("time"); return; }
   topSpeed = Math.max(topSpeed, speed);
   const dz = speed * dt; dist += dz / 8;
   // carving
@@ -368,7 +392,7 @@ function update(dt) {
   if (firing && fireCd <= 0) {
     if (weapon === "rpg") { if (rockets > 0) { rockets--; fireCd = .55; fire("me", tgt.x, tgt.z, tgt.h, 0, 65, 430); shots[shots.length - 1].rocket = 1; shots[shots.length - 1].t = 2.2; shake = Math.max(shake, .15); updateWep();  } }
     else { fireCd = .16; fire("me", tgt.x, tgt.z, tgt.h, tgt.bot ? 1.2 : 0, rnd(18, 26), 900); } }
-  updateBots(dt, speed / (onCable ? 1.25 : 1));
+  updateBots(dt, cruise);
   updateShots(dt);
   dmgPops.forEach(p => { p.t -= dt; p.h += 14 * dt; }); dmgPops = dmgPops.filter(p => p.t > 0);
   if (!running) return;
@@ -379,11 +403,11 @@ function update(dt) {
 function crash(type, by) {
   if (!running) return;
   running = false; firing = false; won = type === "win" || type === "finish"; shake = won ? 0 : 1;
-  placed = type === "win" ? 1 : type === "finish" ? 1 + bots.filter(b => b.alive && b.z > PZ).length : 1 + aliveBots(); updateAlive();
+  placed = type === "win" ? 1 : type === "finish" ? 1 + bots.filter(b => b.safe).length : 1 + aliveBots() + bots.filter(b => b.safe).length; updateAlive();
   const d = Math.floor(dist), nb = d > best; if (nb) { best = d; try { localStorage.setItem("kaspen-best", best); } catch (e) {} }
   $("best").textContent = best + " m";
   $("crashWhy").textContent = type === "finish" ? `Made it to the base lodge with ${Math.ceil(hp)} HP and ${kills} elim${kills === 1 ? "" : "s"} · finished #${placed}.` : won ? `#1 Victory. Last rider standing with ${kills} elim${kills === 1 ? "" : "s"}.` :
-    (type === "shot" ? `Eliminated by ${by.name}` : { tree: "One tree too many", rock: "Ran out of health on a rock", tower: "Lift tower took your last HP", cabin: "Gondola cabin took your last HP" }[type]) + ` · placed #${placed} of ${NAMES.length + 1}.`;
+    (type === "shot" ? `Eliminated by ${by.name}` : { tree: "One tree too many", rock: "Ran out of health on a rock", tower: "Lift tower took your last HP", time: "Time ran out before the finish line. Eliminated", cabin: "Gondola cabin took your last HP" }[type]) + ` · placed #${placed} of ${NAMES.length + 1}.`;
   $("bestLine").textContent = nb ? "New personal best!" : `Best: ${best} m`;
   setTimeout(() => { $("over").hidden = false; drawSummary(); $("again").focus(); }, 500);
 }
