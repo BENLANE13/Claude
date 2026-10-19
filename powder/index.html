@@ -86,7 +86,7 @@ canvas#c { cursor: crosshair; }
   <h1>Kaspen</h1>
   <p>Shred the open mountain. Carve fresh powder under the gondola lines, hit kickers to land on the cables and ride them like a zipline, and collect the letters of <b style="color:var(--gold)">KAPPA ALPHA ORDER</b> in order to unlock the chest. Grab blue chips along the way.</p>
   <p><b style="color:#fff">11 AI riders drop in with you.</b> You get 100 shield on top of 100 health and a rocket launcher with unlimited rockets. Trees block shots, hot cocoa heals, supply crates add shield. </p>
-  <p><b style="color:#ff6b6b">Like Squid Game:</b> cross the base lodge finish at 3,000 m before the clock hits zero or you're eliminated. Get shot down and you're out too. You can stop and go whenever you want, but the clock keeps running.</p>
+  <p><b style="color:#ff6b6b">Like Squid Game:</b> cross the base lodge finish at 3,000 m before the clock hits zero. Twice on the way down you hit a <b>gondola bridge</b>: three cabins per step, pick 1, 2 or 3, and one of them is broken. The clock stops while you guess. or you're eliminated. Get shot down and you're out too. You can stop and go whenever you want, but the clock keeps running.</p>
   <p><kbd>←</kbd> <kbd>→</kbd> carve · <kbd>Space</kbd> jump / hop off the cable · hold <kbd>↓</kbd> / <kbd>S</kbd> to stop · <kbd>P</kbd> pause · aim with the mouse, click or hold <kbd>F</kbd> to fire<br>Phone: hold left or right side to carve, tap or swipe up to jump, hold FIRE to shoot (auto-aim), hold STOP to stop</p>
   <button id="go">Drop in</button>
 </div></div>
@@ -122,7 +122,8 @@ const FAR = 1500, CAMH = 12, SLOPE = .15, PZ = 55, GRAV = 210, JUMPV = 92, FIELD
 const CABH = 46, KICK = { h: 8, len: 26, w: 26, v: 150 };
 let running = false, t0 = 0, last;
 let obs, decor, chips, cables, parts, trail, track, li, letterOut, chestOut, nChips, nChests, px, pvx, py, pv, camX, camY, speed, dist, time, topSpeed, onCable, cableCool, spinA, grab, shake, spawnZ, decorZ, cableZ, toastT;
-const FINISH = 3000, TIME_LIMIT = 150;
+const FINISH = 3000, TIME_LIMIT = 150, BRIDGES = [900, 2000], BRIDGE_ROWS = 4;
+let bridge = null, bridgesDone = [], bridgesCleared = 0;
 let timeLeft = TIME_LIMIT, braking = false, paused = false, vel = 150, cruise = 150;
 let shield, sinceHit, weapon, rockets, bots, shots, dmgPops, hp, kills, dmgDealt, placed, won, hitCool, hitFlash, fireCd, firing = false, fireFlash, aimX = null, aimY = null, lockBot, killMarks;
 const isTouch = matchMedia("(pointer: coarse)").matches;
@@ -135,6 +136,7 @@ const KITS = [["#e8742a", "#a8501a", "#1d2433", "#f2f2f2", "★"], ["#1aa39a", "
 // controls
 const keys = { l: false, r: false };
 addEventListener("keydown", e => {
+  if (bridge && running && !paused) { const m = { "1": 0, "2": 1, "3": 2, ArrowLeft: 0, ArrowUp: 1, ArrowDown: 1, ArrowRight: 2, a: 0, w: 1, s: 1, d: 2 }[e.key]; if (m != null) { e.preventDefault(); bridgePick(m); } if (e.key !== "p" && e.key !== "P" && e.key !== "Escape") return; }
   if (!running && (e.key === " " || e.key === "Enter") && !$("start").hidden) { e.preventDefault(); start(); return; }
   if (!running && (e.key === "Enter") && !$("over").hidden) { start(); return; }
   if (["ArrowLeft", "a", "A"].includes(e.key)) keys.l = true;
@@ -157,7 +159,7 @@ fb.addEventListener("pointerdown", e => { e.preventDefault(); e.stopPropagation(
 ["pointerup", "pointercancel", "pointerleave"].forEach(n => fb.addEventListener(n, () => { firing = false; }));
 const touches = new Map();
 const syncT = () => { const v = [...touches.values()].filter(t => t.steer); keys.l = v.some(t => t.x < W / 2); keys.r = v.some(t => t.x >= W / 2); };
-cv.addEventListener("pointerdown", e => { if (e.pointerType === "mouse") { aimX = e.clientX; aimY = e.clientY; if (running && e.button === 0) firing = true; return; } touches.set(e.pointerId, { x: e.clientX, y0: e.clientY, t: performance.now(), steer: true }); syncT(); });
+cv.addEventListener("pointerdown", e => { if (bridge && running && !paused) { bridgeClick(e.clientX); return; } if (e.pointerType === "mouse") { aimX = e.clientX; aimY = e.clientY; if (running && e.button === 0) firing = true; return; } touches.set(e.pointerId, { x: e.clientX, y0: e.clientY, t: performance.now(), steer: true }); syncT(); });
 cv.addEventListener("pointermove", e => { if (e.pointerType === "mouse") { aimX = e.clientX; aimY = e.clientY; return; } const t = touches.get(e.pointerId); if (!t) return; t.x = e.clientX; if (t.y0 - e.clientY > 40 && !t.jumped) { t.jumped = true; jump(); } syncT(); });
 ["pointerup", "pointercancel"].forEach(n => cv.addEventListener(n, e => { if (e.pointerType === "mouse") { firing = false; return; } const t = touches.get(e.pointerId); if (t && !t.jumped && performance.now() - t.t < 180) jump(); touches.delete(e.pointerId); syncT(); }));
 
@@ -179,7 +181,7 @@ function reset() {
   drawLetters();
   bots = NAMES.map((name, i) => ({ name, kit: KITS[i % KITS.length], x: rnd(-FIELD + 20, FIELD - 20), z: i < 3 ? 85 + i * 30 : rnd(140, 900), h: 0, pv: 0, vx: 0, wx: rnd(-150, 150), hp: 100, sh: 100, alive: true,
     cd: rnd(1.5, 3.2), pace: rnd(-.08, .08), think: rnd(0, 1.5), hitT: 0, fire: 0, bumpT: 0, kills: 0 }));
-  shots = []; dmgPops = []; killMarks = []; timeLeft = TIME_LIMIT; braking = false; paused = false; $("paused").hidden = true; vel = 150; cruise = 150; hp = 100; shield = 100; sinceHit = 99; weapon = "rpg"; rockets = Infinity; kills = 0; dmgDealt = 0; placed = 0; won = false; hitCool = 0; hitFlash = 0; fireCd = 0; fireFlash = 0; lockBot = null;
+  shots = []; dmgPops = []; killMarks = []; bridge = null; bridgesDone = []; bridgesCleared = 0; timeLeft = TIME_LIMIT; braking = false; paused = false; $("paused").hidden = true; vel = 150; cruise = 150; hp = 100; shield = 100; sinceHit = 99; weapon = "rpg"; rockets = Infinity; kills = 0; dmgDealt = 0; placed = 0; won = false; hitCool = 0; hitFlash = 0; fireCd = 0; fireFlash = 0; lockBot = null;
   $("feed").innerHTML = ""; updateHP(); updateAlive(); updateWep();
 }
 const aliveBots = () => bots.filter(b => b.alive).length;
@@ -313,8 +315,9 @@ function start() { reset(); running = true; $("start").hidden = true; $("over").
 $("go").onclick = start; $("again").onclick = start;
 function loop(t) {
   const dt = Math.min(.035, (t - last) / 1000); last = t; t0 = t;
-  if (running && !paused) update(dt);
+  if (running && !paused) { if (bridge) updateBridge(dt); else update(dt); }
   draw(dt);
+  if (bridge) drawBridge();
   if (running || shake > 0) requestAnimationFrame(loop);
 }
 function groundH() {
@@ -334,6 +337,7 @@ function update(dt) {
   const tl = Math.max(0, Math.ceil(timeLeft)), te = $("timer"); te.textContent = `${Math.floor(tl / 60)}:${String(tl % 60).padStart(2, "0")}`; te.className = tl <= 20 ? "low" : "";
   if (tl === 20 && !toastT) toast("20 SECONDS LEFT");
   if (timeLeft <= 0) { crash("time"); return; }
+  for (let i = 0; i < BRIDGES.length; i++) if (!bridgesDone[i] && dist >= BRIDGES[i]) { bridgesDone[i] = 1; startBridge(); return; }
   topSpeed = Math.max(topSpeed, speed);
   const dz = speed * dt; dist += dz / 8;
   // carving
@@ -407,9 +411,98 @@ function crash(type, by) {
   const d = Math.floor(dist), nb = d > best; if (nb) { best = d; try { localStorage.setItem("kaspen-best", best); } catch (e) {} }
   $("best").textContent = best + " m";
   $("crashWhy").textContent = type === "finish" ? `Made it to the base lodge with ${Math.ceil(hp)} HP and ${kills} elim${kills === 1 ? "" : "s"} · finished #${placed}.` : won ? `#1 Victory. Last rider standing with ${kills} elim${kills === 1 ? "" : "s"}.` :
-    (type === "shot" ? `Eliminated by ${by.name}` : { tree: "One tree too many", rock: "Ran out of health on a rock", tower: "Lift tower took your last HP", time: "Time ran out before the finish line. Eliminated", cabin: "Gondola cabin took your last HP" }[type]) + ` · placed #${placed} of ${NAMES.length + 1}.`;
+    (type === "shot" ? `Eliminated by ${by.name}` : { tree: "One tree too many", rock: "Ran out of health on a rock", tower: "Lift tower took your last HP", bridge: "Jumped onto the broken gondola and fell through", time: "Time ran out before the finish line. Eliminated", cabin: "Gondola cabin took your last HP" }[type]) + ` · placed #${placed} of ${NAMES.length + 1}.`;
   $("bestLine").textContent = nb ? "New personal best!" : `Best: ${best} m`;
   setTimeout(() => { $("over").hidden = false; drawSummary(); $("again").focus(); }, 500);
+}
+
+/* ───────── gondola bridge: three cabins per step, one is broken ───────── */
+function startBridge() {
+  bridge = { rows: Array.from({ length: BRIDGE_ROWS }, () => Math.floor(Math.random() * 3)), cur: 0, phase: "choose", t: 0, pick: -1, shards: [], picks: [] };
+  firing = false; braking = false; shots = []; $("toast").style.opacity = 0; toastT = 0;
+}
+function bridgePick(c) { if (!bridge || bridge.phase !== "choose") return; bridge.pick = c; bridge.phase = "jump"; bridge.t = 0; }
+function bridgeClick(cx) { let best = 0, bd = 1e9; for (let c = 0; c < 3; c++) { const d = Math.abs(cabinPos(0, c).x - cx); if (d < bd) { bd = d; best = c; } } bridgePick(best); }
+function cabinPos(d, c) {
+  const sc = 1 / (1 + Math.max(0, d) * .55), base = Math.min(W, H * 1.3);
+  return { x: W / 2 + (c - 1) * Math.min(W * .3, 320) * sc, y: H * .62 - (1 - sc) * H * .5, s: base * .15 * sc, sc };
+}
+function updateBridge(dt) {
+  const b = bridge; b.t += dt;
+  b.shards.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 900 * dt; p.r += p.vr * dt; });
+  if (b.phase === "jump" && b.t >= .6) {
+    b.t = 0;
+    if (b.pick === b.rows[b.cur]) { b.phase = "fall"; const p = cabinPos(0, b.pick);
+      for (let i = 0; i < 40; i++) b.shards.push({ x: p.x + rnd(-p.s * .4, p.s * .4), y: p.y + rnd(-p.s * .4, p.s * .5), vx: rnd(-220, 220), vy: rnd(-260, 40), r: rnd(0, 6), vr: rnd(-8, 8), sz: rnd(4, 12) }); shake = .8; }
+    else { b.phase = "land"; b.picks.push(b.pick); }
+  }
+  if (b.phase === "land" && b.t >= .45) { b.t = 0; if (b.cur >= BRIDGE_ROWS - 1) { endBridge(); return; } b.phase = "shift"; }
+  if (b.phase === "shift" && b.t >= .45) { b.t = 0; b.cur++; b.phase = "choose"; b.pick = -1; }
+  if (b.phase === "fall" && b.t >= 1.4) { bridge = null; crash("bridge"); }
+}
+function endBridge() {
+  bridge = null; bridgesCleared++; obs = obs.filter(o => o.z > 260); shots = []; vel = Math.max(vel, 120); last = performance.now();
+  toast("BRIDGE CLEARED"); addFeed(`You crossed gondola bridge ${bridgesCleared}`, true);
+}
+function cabinSprite(x, y, sz, state, label) {
+  const w = sz * .5, h = sz * .62;
+  g.strokeStyle = "#2c3443"; g.lineWidth = Math.max(2, sz * .03); g.beginPath(); g.moveTo(x, y - h * .5); g.lineTo(x, y - h * 1.05); g.stroke();
+  if (state === "gone") return;
+  g.save(); if (state === "broken") g.globalAlpha = .45;
+  const body = g.createLinearGradient(x - w, 0, x + w, 0); body.addColorStop(0, "#0b3b8c"); body.addColorStop(.5, "#1463f3"); body.addColorStop(1, "#0d4ab0");
+  g.fillStyle = state === "safe" ? "#1b9a4f" : body; rrect(x - w, y - h / 2, w * 2, h, w * .4); g.fill();
+  g.fillStyle = "rgba(205,228,250,.9)"; rrect(x - w * .78, y - h * .32, w * 1.56, h * .4, w * .18); g.fill();
+  g.fillStyle = "#f6fbff"; g.beginPath(); g.ellipse(x, y - h / 2 + 2, w * 1.02, h * .12, 0, Math.PI, 0); g.fill(); g.fillRect(x - w * .95, y - h / 2, w * 1.9, h * .07);
+  g.fillStyle = "rgba(220,240,255,.95)"; for (let i = 0; i < 6; i++) { const ix = x - w * .8 + i * w * .32; g.beginPath(); g.moveTo(ix - 3, y + h / 2 - 2); g.lineTo(ix + 3, y + h / 2 - 2); g.lineTo(ix, y + h / 2 + h * (.1 + (i % 3) * .05)); g.fill(); }
+  if (state === "broken") { g.strokeStyle = "#fff"; g.lineWidth = 2; g.beginPath(); g.moveTo(x - w * .6, y - h * .3); g.lineTo(x - w * .1, y); g.lineTo(x - w * .4, y + h * .3); g.moveTo(x - w * .1, y); g.lineTo(x + w * .5, y - h * .2); g.stroke(); }
+  g.restore();
+  if (label) { g.font = `${Math.max(16, sz * .28)}px Bungee, Impact, sans-serif`; g.textAlign = "center"; g.textBaseline = "middle"; g.lineWidth = 5; g.strokeStyle = "#041530"; g.strokeText(label, x, y - h * .8); g.fillStyle = "#fff"; g.fillText(label, x, y - h * .8); }
+}
+function riderSprite(x, y, s) {
+  g.fillStyle = "#101521"; rrect(x - 16 * s, y - 3 * s, 32 * s, 6 * s, 3 * s); g.fill(); g.fillStyle = "#8c1d2c"; rrect(x - 15 * s, y - 3 * s, 30 * s, 4 * s, 2 * s); g.fill();
+  g.fillStyle = "#2b3a2f"; g.fillRect(x - 9 * s, y - 15 * s, 7 * s, 13 * s); g.fillRect(x + 2 * s, y - 15 * s, 7 * s, 13 * s);
+  g.fillStyle = "#8c1d2c"; rrect(x - 10 * s, y - 32 * s, 20 * s, 19 * s, 6 * s); g.fill();
+  g.fillStyle = "#d8b45a"; g.font = `900 ${7 * s}px Cinzel, Georgia, serif`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("ΚΑ", x, y - 23 * s);
+  g.fillStyle = "#3b2a1e"; g.beginPath(); g.arc(x, y - 37 * s, 5.5 * s, 0, 7); g.fill(); g.fillStyle = "#d8b45a"; g.beginPath(); g.arc(x, y - 39 * s, 5.8 * s, Math.PI, 0); g.fill();
+}
+function drawBridge() {
+  const b = bridge; if (!b) return;
+  const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, "rgba(4,21,48,.55)"); gr.addColorStop(.6, "rgba(4,21,48,.7)"); gr.addColorStop(1, "rgba(2,8,20,.95)");
+  g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  g.fillStyle = "rgba(255,255,255,.12)"; for (let i = 0; i < 40; i++) { const x = (i * 97) % W, y = H * .7 + ((i * 53) % 100) / 100 * H * .3; g.fillRect(x, y, 2, 2); }
+  const shift = b.phase === "shift" ? Math.min(1, b.t / .45) : 0;
+  [0, 1, 2].forEach(c => { const a = cabinPos(BRIDGE_ROWS, c), z = cabinPos(-1, c); g.strokeStyle = "rgba(30,40,60,.9)"; g.lineWidth = 2; g.beginPath(); g.moveTo(a.x, a.y - a.s * .66); g.lineTo(W / 2 + (c - 1) * Math.min(W * .3, 320) * 1.6, -10); g.stroke(); });
+  for (let r = BRIDGE_ROWS - 1; r >= b.cur; r--) {
+    const d = r - b.cur - shift;
+    for (let c = 0; c < 3; c++) {
+      const p = cabinPos(d, c);
+      let state = "ok";
+      if (r === b.cur && (b.phase === "fall") && c === b.pick) state = "gone";
+      else if (r === b.cur && b.phase === "fall" && c === b.rows[r]) state = "gone";
+      else if (r === b.cur && (b.phase === "land" || b.phase === "shift") && c === b.pick) state = "safe";
+      if (r === b.cur && (b.phase === "land" || b.phase === "shift") && c === b.rows[r]) state = "broken";
+      cabinSprite(p.x, p.y, p.s, state, r === b.cur && b.phase === "choose" ? String(c + 1) : "");
+    }
+  }
+  // rider: standing on the last safe cabin, jumping, or falling
+  const start = { x: W / 2, y: H * .97, sc: 1.6 };
+  let rx = start.x, ry = start.y, rs = start.sc;
+  if (b.phase !== "choose" && b.pick >= 0) {
+    const p = cabinPos(b.phase === "shift" ? -shift : 0, b.pick), top = { x: p.x, y: p.y - p.s * .31, sc: p.sc * 1.6 };
+    if (b.phase === "jump") { const t = Math.min(1, b.t / .6); rx = start.x + (top.x - start.x) * t; ry = start.y + (top.y - start.y) * t - Math.sin(Math.PI * t) * H * .18; rs = start.sc + (top.sc - start.sc) * t; }
+    else if (b.phase === "fall") { rx = top.x; ry = top.y + b.t * b.t * H * .9; rs = top.sc * Math.max(.2, 1 - b.t * .4); }
+    else { rx = top.x; ry = top.y; rs = top.sc; if (b.phase === "shift") { rx += (start.x - rx) * shift; ry += (start.y - ry) * shift; rs += (start.sc - rs) * shift; } }
+  }
+  if (b.phase === "choose") { g.fillStyle = "#e7eef7"; g.beginPath(); g.ellipse(W / 2, H * 1.02, Math.min(W * .3, 260), H * .08, 0, 0, 7); g.fill(); }
+  riderSprite(rx, ry, Math.max(.4, rs) * Math.min(1.4, H / 700));
+  b.shards.forEach(p => { g.save(); g.translate(p.x, p.y); g.rotate(p.r); g.fillStyle = "rgba(200,230,255,.85)"; g.beginPath(); g.moveTo(0, -p.sz); g.lineTo(p.sz * .6, p.sz * .5); g.lineTo(-p.sz * .5, p.sz * .4); g.fill(); g.restore(); });
+  // instructions
+  g.textAlign = "center"; g.textBaseline = "alphabetic";
+  g.font = `${Math.min(34, W * .06)}px Bungee, Impact, sans-serif`; g.lineWidth = 6; g.strokeStyle = "#041530"; g.fillStyle = "#fff";
+  const title = `GONDOLA BRIDGE · STEP ${b.cur + 1} OF ${BRIDGE_ROWS}`; g.strokeText(title, W / 2, H * .2); g.fillText(title, W / 2, H * .2);
+  g.font = `600 ${Math.min(16, W * .035)}px JetBrains Mono, monospace`; g.fillStyle = "#bfe0ff";
+  const sub = b.phase === "choose" ? (isTouch ? "Tap a gondola. Two hold, one is broken. The clock is paused." : "Press 1, 2 or 3 (or ← ↑ →). Two hold, one is broken. The clock is paused.") : b.phase === "fall" ? "It was the broken one..." : "It held!";
+  g.fillText(sub, W / 2, H * .2 + 30);
 }
 
 /* ───────── rendering ───────── */
