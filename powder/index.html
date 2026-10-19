@@ -55,6 +55,7 @@ canvas#c { cursor: crosshair; }
 .feed div.me { border: 1px solid var(--gold); color: var(--gold); }
 .fire { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); width: 86px; height: 86px; border-radius: 50%; margin: 0; padding: 0; background: rgba(201,54,45,.92); color: #fff; font-family: var(--f-display); font-weight: 400; font-size: 18px; display: none; touch-action: none; box-shadow: 0 6px 20px rgba(4,21,48,.4); }
 @media (pointer: coarse) { .fire { display: grid; place-items: center; } }
+.fire.swap[hidden] { display: none; }
 .fire.swap { width: 62px; height: 62px; font-size: 13px; bottom: calc(116px + env(safe-area-inset-bottom, 0px)); background: rgba(11,59,140,.92); }
 .prog { position: fixed; left: 50%; transform: translateX(-50%); top: calc(64px + env(safe-area-inset-top, 0px)); width: min(340px, 50vw); height: 8px; border-radius: 99px; background: rgba(4,21,48,.6); pointer-events: none; }
 .prog i { display: block; height: 100%; width: 0; border-radius: 99px; background: linear-gradient(90deg, #5ea0f2, #d8b45a); }
@@ -69,17 +70,17 @@ canvas#c { cursor: crosshair; }
   <div class="box" style="text-align:right"><small>CHIPS · BEST</small><b class="chips"><span id="chips" style="color:#7cc4ff">0</span><span style="opacity:.5">·</span><span id="best">0 m</span></b></div>
 </div>
 <div class="toast" id="toast" style="opacity:0"></div>
-<div class="hpbox"><div class="row"><small>SHIELD</small><b id="shNum" style="color:#74c0fc">100</b></div><div class="hpbar"><i id="shBar" style="background:#3b9cff"></i></div><div class="row"><small>HEALTH</small><b id="hpNum">100</b></div><div class="hpbar"><i id="hpBar"></i></div><div class="row2"><span>WEAPON <b id="wep">BLASTER</b></span><span>RPG <b id="ammo">6</b></span><span>ALIVE <b id="alive">12</b></span><span>ELIMS <b id="elims">0</b></span></div></div>
+<div class="hpbox"><div class="row"><small>SHIELD</small><b id="shNum" style="color:#74c0fc">100</b></div><div class="hpbar"><i id="shBar" style="background:#3b9cff"></i></div><div class="row"><small>HEALTH</small><b id="hpNum">100</b></div><div class="hpbar"><i id="hpBar"></i></div><div class="row2"><span>WEAPON <b id="wep">ROCKET LAUNCHER</b></span><span>AMMO <b id="ammo">∞</b></span><span>ALIVE <b id="alive">12</b></span><span>ELIMS <b id="elims">0</b></span></div></div>
 <div class="feed" id="feed" aria-live="polite"></div>
 <button class="fire" id="fireBtn" aria-label="Fire">FIRE</button>
-<button class="fire swap" id="swapBtn" aria-label="Switch weapon">RPG</button>
+<button class="fire swap" id="swapBtn" aria-label="Switch weapon" hidden>RPG</button>
 <div class="prog" aria-hidden="true"><i id="progBar"></i><span>BASE LODGE</span></div>
 
 <div class="screen" id="start"><div class="card">
   <h1>Kaspen</h1>
   <p>Shred the open mountain. Carve fresh powder under the gondola lines, hit kickers to land on the cables and ride them like a zipline, and collect the letters of <b style="color:var(--gold)">KAPPA ALPHA ORDER</b> in order to unlock the chest. Grab blue chips along the way.</p>
-  <p><b style="color:#fff">11 AI riders drop in with you.</b> You get 100 shield on top of 100 health, a blaster and an RPG. Trees block shots, hot cocoa heals, rocket crates refill your RPG. Reach the base lodge at 3,000 m or be the last rider standing to win.</p>
-  <p><kbd>←</kbd> <kbd>→</kbd> carve · <kbd>Space</kbd> jump / hop off the cable · aim with the mouse, click or hold <kbd>F</kbd> to fire, <kbd>Q</kbd> to switch to the RPG<br>Phone: hold left or right side to carve, tap or swipe up to jump, hold FIRE to shoot (auto-aim), tap RPG to switch</p>
+  <p><b style="color:#fff">11 AI riders drop in with you.</b> You get 100 shield on top of 100 health and a rocket launcher with unlimited rockets. Trees block shots, hot cocoa heals, supply crates add shield. Reach the base lodge at 3,000 m or be the last rider standing to win.</p>
+  <p><kbd>←</kbd> <kbd>→</kbd> carve · <kbd>Space</kbd> jump / hop off the cable · aim with the mouse, click or hold <kbd>F</kbd> to fire<br>Phone: hold left or right side to carve, tap or swipe up to jump, hold FIRE to shoot (auto-aim)</p>
   <button id="go">Drop in</button>
 </div></div>
 <div class="screen" id="over" hidden><div class="card strava">
@@ -163,12 +164,12 @@ function reset() {
   drawLetters();
   bots = NAMES.map((name, i) => ({ name, kit: KITS[i % KITS.length], x: rnd(-FIELD + 20, FIELD - 20), z: i < 3 ? 85 + i * 30 : rnd(140, 900), h: 0, pv: 0, vx: 0, wx: rnd(-150, 150), hp: 100, sh: 100, alive: true,
     cd: rnd(1.5, 3.2), pace: rnd(-.08, .08), think: rnd(0, 1.5), hitT: 0, fire: 0, bumpT: 0, kills: 0 }));
-  shots = []; dmgPops = []; killMarks = []; hp = 100; shield = 100; sinceHit = 99; weapon = "blaster"; rockets = 6; kills = 0; dmgDealt = 0; placed = 0; won = false; hitCool = 0; hitFlash = 0; fireCd = 0; fireFlash = 0; lockBot = null;
+  shots = []; dmgPops = []; killMarks = []; hp = 100; shield = 100; sinceHit = 99; weapon = "rpg"; rockets = Infinity; kills = 0; dmgDealt = 0; placed = 0; won = false; hitCool = 0; hitFlash = 0; fireCd = 0; fireFlash = 0; lockBot = null;
   $("feed").innerHTML = ""; updateHP(); updateAlive(); updateWep();
 }
 const aliveBots = () => bots.filter(b => b.alive).length;
-function updateWep() { $("wep").textContent = weapon === "rpg" ? "RPG" : "BLASTER"; $("ammo").textContent = rockets; $("swapBtn").textContent = weapon === "rpg" ? "GUN" : "RPG"; }
-function swapWep() { weapon = weapon === "rpg" ? "blaster" : "rpg"; fireCd = Math.max(fireCd, .25); updateWep(); toast(weapon === "rpg" ? `RPG · ${rockets} rockets` : "BLASTER"); }
+function updateWep() { $("wep").textContent = "ROCKET LAUNCHER"; $("ammo").textContent = "∞"; $("swapBtn").textContent = weapon === "rpg" ? "GUN" : "RPG"; }
+function swapWep() { return; weapon = weapon === "rpg" ? "blaster" : "rpg"; fireCd = Math.max(fireCd, .25); updateWep(); toast(weapon === "rpg" ? `RPG · ${rockets} rockets` : "BLASTER"); }
 function updateHP() { const sv = Math.max(0, Math.ceil(shield)); $("shNum").textContent = sv; $("shBar").style.width = sv + "%"; const v = Math.max(0, Math.ceil(hp)); $("hpNum").textContent = v; const bar = $("hpBar"); bar.style.width = v + "%"; bar.style.background = v > 50 ? "#43d17a" : v > 25 ? "#ffd43b" : "#ff6b6b"; }
 function updateAlive() { $("alive").textContent = aliveBots() + (running || won || !placed ? 1 : 0); $("elims").textContent = kills; }
 function addFeed(txt, me) { const d = document.createElement("div"); d.textContent = txt; if (me) d.className = "me"; const f = $("feed"); f.prepend(d); while (f.children.length > 5) f.lastChild.remove(); setTimeout(() => d.remove(), 5000); }
@@ -208,7 +209,7 @@ function aimTarget() {
   for (const b of bots) { if (!b.alive || b.z < 14 || b.z > 1100) continue; const p = proj(b.x, b.z, b.h + 7), d = Math.hypot(p.x - ax, p.y - ay); if (d < bd) { bd = d; best = b; } }
   if (best && bd < rad) { const dd = Math.hypot(best.x - px, best.z - PZ); return { x: best.x + best.vx * dd / 900, z: best.z, h: best.h + 7, bot: best }; }
   const z = PZ + 400, f = focal() / z;
-  return { x: camX + (ax - W / 2) / f, z, h: CAMH + camY + z * SLOPE - (ay - horizon()) / f };
+  return { x: camX + (ax - W / 2) / f - bendAt(z), z, h: CAMH + camY + z * SLOPE - (ay - horizon()) / f };
 }
 function segDist(x0, z0, h0, x1, z1, h1, px_, pz_, ph_) {
   const dx = x1 - x0, dz = z1 - z0, dh = h1 - h0, L = dx * dx + dz * dz + dh * dh || 1;
@@ -314,7 +315,7 @@ function update(dt) {
   // carving
   const steer = (keys.r ? 1 : 0) - (keys.l ? 1 : 0);
   if (onCable) { pvx = 0; px += (onCable.x - px) * Math.min(1, dt * 10); }
-  else { const target = steer * (py > 1 ? 70 : 125); pvx += (target - pvx) * Math.min(1, dt * (py > 1 ? 2.5 : 5)); px = Math.max(-FIELD, Math.min(FIELD, px + pvx * dt)); }
+  else { const target = steer * (py > 1 ? 70 : 125); pvx += (target - pvx) * Math.min(1, dt * (py > 1 ? 2.5 : 5)); px = Math.max(-FIELD, Math.min(FIELD, px + pvx * dt - (bendU(dist * 8 + PZ + 80) - bendU(dist * 8 + PZ)) * .9 * dt)); }
   camX += (px - camX) * Math.min(1, dt * 5);
   // world scrolls toward you
   [obs, decor, chips, parts, trail].forEach(a => a.forEach(o => o.z -= dz));
@@ -352,7 +353,7 @@ function update(dt) {
     if (o.type === "tree" && !o.hitMe && dzz < 5 && dx < o.s * .42 + 3 && py < o.s * 3) { o.hitMe = 1; if (hurtMe(20, "tree")) return; pvx = (px >= o.x ? 1 : -1) * 170; toast("OOF −20"); }
     if (o.type === "rock" && dzz < 5 && dx < o.s * 1.1 + 2) { if (py > o.s * 1.2) { if (!o.cleared) { o.cleared = 1; dist += 8; toast("CLEAN"); } } else if (!o.hitMe) { o.hitMe = 1; if (hurtMe(15, "rock")) return; pv = 60; toast("ROCKED −15"); } }
     if (o.type === "tower" && !o.hitMe && dzz < 4 && dx < 5 && py < CABH - 3) { o.hitMe = 1; if (hurtMe(25, "tower")) return; pvx = (px >= o.x ? 1 : -1) * 190; toast("TOWER −25"); }
-    if (o.type === "crate" && !o.got && dzz < 7 && dx < 10 && py < 12) { o.got = 1; rockets = Math.min(12, rockets + 3); shield = Math.min(100, shield + 25); updateHP(); updateWep(); toast("ROCKETS +3 · SHIELD +25"); }
+    if (o.type === "crate" && !o.got && dzz < 7 && dx < 10 && py < 12) { o.got = 1; shield = Math.min(100, shield + 40); updateHP(); toast("SHIELD +40"); }
     if (o.type === "cocoa" && !o.got && dzz < 7 && dx < 9 && py < 12) { o.got = 1; hp = Math.min(100, hp + 30); updateHP(); toast("HOT COCOA +30"); }
     if (o.type === "letter" && !o.got && dzz < 8 && dx < 11 && Math.abs(o.h - (py + 6)) < 12) { o.got = 1; li++; letterOut = false; drawLetters(); toast(li >= SEQ.length ? "ALL LETTERS! FIND THE CHEST" : `${o.ch} COLLECTED`); o.z = -999; }
     if (o.type === "chest" && !o.got && dzz < 8 && dx < 14 && py < 14) { o.got = 1; nChests++; nChips += 250; li = 0; chestOut = false; drawLetters(); toast("CHEST UNLOCKED · +250"); for (let i = 0; i < 40; i++) parts.push({ x: o.x, z: o.z, h: 6, vx: rnd(-50, 50), vz: rnd(-20, 60), vh: rnd(30, 90), t: 1.2, chip: 1 }); }
@@ -365,7 +366,7 @@ function update(dt) {
   if (dist >= FINISH) { crash("finish"); return; }
   const tgt = aimTarget(); lockBot = tgt.bot || null;
   if (firing && fireCd <= 0) {
-    if (weapon === "rpg") { if (rockets > 0) { rockets--; fireCd = 1.1; fire("me", tgt.x, tgt.z, tgt.h, 0, 65, 430); shots[shots.length - 1].rocket = 1; shots[shots.length - 1].t = 2.2; shake = Math.max(shake, .15); updateWep(); if (!rockets) { weapon = "blaster"; updateWep(); toast("OUT OF ROCKETS"); } } }
+    if (weapon === "rpg") { if (rockets > 0) { rockets--; fireCd = .55; fire("me", tgt.x, tgt.z, tgt.h, 0, 65, 430); shots[shots.length - 1].rocket = 1; shots[shots.length - 1].t = 2.2; shake = Math.max(shake, .15); updateWep();  } }
     else { fireCd = .16; fire("me", tgt.x, tgt.z, tgt.h, tgt.bot ? 1.2 : 0, rnd(18, 26), 900); } }
   updateBots(dt, speed / (onCable ? 1.25 : 1));
   updateShots(dt);
@@ -390,7 +391,9 @@ function crash(type, by) {
 /* ───────── rendering ───────── */
 const horizon = () => H * .25;
 const focal = () => Math.min(W, H * 1.25) * .9;
-function proj(x, z, h = 0) { const f = focal() / z; return { x: W / 2 + (x - camX) * f, y: horizon() + (CAMH + camY - h + z * SLOPE) * f, k: f }; }
+const bendU = u => 150 * Math.sin(u / 1150) + 70 * Math.sin(u / 460 + 1.3) + 25 * Math.sin(u / 190 + 4);
+const bendAt = z => bendU(dist * 8 + z) - bendU(dist * 8 + PZ);
+function proj(x, z, h = 0) { const f = focal() / z; return { x: W / 2 + (x + bendAt(z) - camX) * f, y: horizon() + (CAMH + camY - h + z * SLOPE) * f, k: f }; }
 function draw(dt) {
   camY += ((onCable ? py : Math.max(0, py * .55)) - camY) * Math.min(1, (dt || .016) * 7);
   let sx = 0, sy = 0;
@@ -679,7 +682,7 @@ function drawSummary() {
   // map: run winds down the mountain; x across the slope, y downhill
   const m = $("map"), c = m.getContext("2d"), MW = m.width, MH = m.height;
   c.fillStyle = "#eef1ec"; c.fillRect(0, 0, MW, MH);
-  const total = Math.max(60, dist), bend = d => Math.sin(d / 420) * 160 + Math.sin(d / 170) * 40;
+  const total = Math.max(60, dist), bend = d => bendU(d * 8) * .9;
   const pad = 60, sy = (MH - pad * 2) / total, sx = Math.min(1.2, (MW - pad * 2) / 900);
   const P = (x, d) => [MW / 2 + (x + bend(d)) * sx, pad + d * sy];
   // terrain: contour lines + tree cover
