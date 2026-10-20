@@ -1,0 +1,420 @@
+<title>Last One Out</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Chakra+Petch:wght@400;600&display=swap">
+<style>
+/* Layout: one-screen first-person shooter — stat strip on top, pixel-rendered maze view fills the rest, touch pad overlays on phones. Deliberately single dark theme. */
+:root{
+  --bg:#07090d; --deep:#0f141c; --pink:#ff2d7a; --teal:#1fd3b4; --fg:#e8eef5; --dim:#7f8b99;
+  --display:"Black Ops One",Impact,sans-serif; --body:"Chakra Petch",system-ui,sans-serif;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);margin:0;overflow:hidden;box-sizing:border-box;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:8px}
+.app{height:100%;display:flex;flex-direction:column;max-width:1100px;margin:0 auto;gap:8px}
+header{display:flex;justify-content:space-between;align-items:center;gap:8px 16px;flex-wrap:wrap}
+h1{font-family:var(--display);font-weight:400;font-size:1.2rem;letter-spacing:.06em;margin:0;color:var(--pink)}
+.hud{display:flex;gap:16px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+.hud div{display:flex;flex-direction:column;align-items:flex-end}
+.hud small{font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.hud b{font-family:var(--display);font-weight:400;font-size:1.15rem}
+.warn{color:var(--pink)}
+.stage{flex:1;position:relative;min-height:0;border:2px solid #1b2430;border-radius:4px;overflow:hidden;background:#000}
+canvas{width:100%;height:100%;display:block;image-rendering:pixelated;cursor:crosshair;touch-action:none}
+.msg{position:absolute;left:0;right:0;top:12%;text-align:center;font-family:var(--display);font-size:1.3rem;letter-spacing:.05em;
+  color:var(--fg);text-shadow:0 2px 0 #000;pointer-events:none}
+.overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  text-align:center;background:rgba(7,9,13,.86);padding:24px;overflow:auto}
+.overlay[hidden]{display:none}
+.overlay h2{font-family:var(--display);font-weight:400;font-size:2rem;margin:0;color:var(--pink);text-wrap:balance}
+.overlay p{max-width:44ch;margin:0;line-height:1.5}
+.shapes{font-size:1.5rem;letter-spacing:.4em;color:var(--pink)}
+.keys{display:grid;grid-template-columns:auto auto;gap:4px 14px;font-size:.85rem;color:var(--dim);text-align:left}
+.keys kbd{font-family:var(--body);font-weight:600;color:var(--fg)}
+button{font-family:var(--display);font-size:1.1rem;letter-spacing:.06em;color:var(--fg);background:var(--deep);
+  border:2px solid var(--pink);border-radius:4px;padding:12px 28px;cursor:pointer}
+button:hover{background:#1d1420}
+button:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+.touch{display:none;position:absolute;inset:auto 0 0 0;padding:12px;justify-content:space-between;align-items:flex-end;pointer-events:none}
+.pad{display:grid;grid-template-columns:repeat(3,52px);grid-template-rows:repeat(2,52px);gap:6px}
+.touch button{pointer-events:auto;padding:0;font-size:1.2rem;background:rgba(15,20,28,.6);border-color:rgba(232,238,245,.35);user-select:none;-webkit-user-select:none;touch-action:none}
+.touch .fire{width:84px;height:84px;border-radius:50%;border-color:var(--pink);color:var(--pink)}
+@media (pointer:coarse){.touch{display:flex}}
+@media (prefers-reduced-motion:reduce){.msg{transition:none}}
+</style>
+
+<div class="app">
+  <header>
+    <h1>LAST ONE OUT</h1>
+    <div class="hud">
+      <div><small>Health</small><b id="hp">100</b></div>
+      <div><small>Ammo</small><b id="ammo">6/6</b></div>
+      <div><small>Rivals</small><b id="riv">8</b></div>
+      <div><small>Lead rival to exit</small><b id="lead">–</b></div>
+      <div><small>Time</small><b id="time">0:00</b></div>
+    </div>
+  </header>
+  <div class="stage">
+    <canvas id="c"></canvas>
+    <div class="msg" id="msg"></div>
+    <div class="touch">
+      <div class="pad">
+        <span></span><button data-k="fwd" aria-label="Forward">▲</button><span></span>
+        <button data-k="turnL" aria-label="Turn left">◀</button><button data-k="back" aria-label="Back">▼</button><button data-k="turnR" aria-label="Turn right">▶</button>
+      </div>
+      <button class="fire" data-k="fire">FIRE</button>
+    </div>
+    <div class="overlay" id="ov">
+      <div class="shapes">○ △ □</div>
+      <h2 id="ovTitle">Game 6: The Maze</h2>
+      <p id="ovText">You are player 456. Eight armed players are somewhere in the maze with you, and the exit only lets one person out. Find the green EXIT before anyone else reaches it, and take down anyone in your way.</p>
+      <div class="keys">
+        <kbd>W A S D</kbd><span>Move and strafe</span>
+        <kbd>Mouse / ← →</kbd><span>Look around (click to lock the mouse)</span>
+        <kbd>Click / Space</kbd><span>Shoot</span>
+        <kbd>R</kbd><span>Reload</span>
+      </div>
+      <button id="start">Enter the maze</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const cv=$('c'), ctx=cv.getContext('2d');
+const CELLS=10, N=CELLS*2+1, FOV=.66, RIVALS=8, DIRS=[[1,0],[-1,0],[0,1],[0,-1]];
+let W=400,H=240,zbuf=new Float32Array(W);
+let map,dist,seen,EX,EY,P,E,state='idle',elapsed=0,msgT=0,keys={};
+
+/* ---------- textures & sprites ---------- */
+function mk(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;return [c,c.getContext('2d')];}
+const COLORS=['#ef8fb0','#86d6c1','#f2c27c'];
+function wallTex(col,shape){
+  const [c,g]=mk(64,64);
+  g.fillStyle=col;g.fillRect(0,0,64,64);
+  g.fillStyle='rgba(0,0,0,.14)';g.fillRect(0,0,64,2);g.fillRect(0,62,64,2);g.fillRect(0,0,2,64);
+  g.fillStyle='rgba(255,255,255,.15)';g.fillRect(2,2,60,3);
+  if(shape>=0){
+    g.strokeStyle='rgba(255,255,255,.9)';g.lineWidth=4;g.beginPath();
+    if(shape===0)g.arc(32,32,13,0,7);
+    else if(shape===1){g.moveTo(32,16);g.lineTo(47,44);g.lineTo(17,44);g.closePath();}
+    else g.rect(19,19,26,26);
+    g.stroke();
+  }
+  return c;
+}
+const TEX=COLORS.flatMap((c,i)=>[wallTex(c,-1),wallTex(c,i)]);
+const DOOR=(()=>{const [c,g]=mk(64,64);g.fillStyle='#0b2620';g.fillRect(0,0,64,64);
+  g.strokeStyle='#1fd3b4';g.lineWidth=4;g.strokeRect(6,6,52,58);
+  g.fillStyle='#1fd3b4';g.font='bold 14px sans-serif';g.textAlign='center';g.fillText('EXIT',32,30);
+  g.fillRect(28,40,8,3);g.beginPath();g.moveTo(40,36);g.lineTo(46,41.5);g.lineTo(40,47);g.fill();return c;})();
+function texFor(x,y,t){
+  if(t===2) return DOOR;
+  const col=((x>>2)+(y>>2))%3, h=((x*73856093)^(y*19349663))>>>0;
+  return TEX[col*2+(h%5===0?1:0)];
+}
+function figure(num,v){ // v: 0 stand, 1 firing, 2 hurt, 3 down
+  const [c,g]=mk(48,80);
+  if(v===3){
+    g.fillStyle='rgba(150,10,35,.85)';g.beginPath();g.ellipse(24,76,21,4,0,0,7);g.fill();
+    g.fillStyle='#1f7a5e';g.fillRect(5,68,32,8);g.fillStyle='#fff';g.fillRect(5,68,32,1.5);
+    g.fillStyle='#e6b48c';g.beginPath();g.arc(40,71,5,0,7);g.fill();
+    g.fillStyle='#fff';g.fillRect(16,69,8,5);
+    return c;
+  }
+  g.fillStyle='#1f7a5e';g.fillRect(16,56,7,20);g.fillRect(25,56,7,20);
+  g.fillStyle='#f4f4f4';g.fillRect(15,75,9,4);g.fillRect(24,75,9,4);
+  g.fillStyle='#22876a';g.fillRect(13,30,22,28);g.fillRect(8,32,6,18);g.fillRect(34,32,6,14);
+  g.fillStyle='#f4f4f4';g.fillRect(13,30,2,28);g.fillRect(33,30,2,28);
+  g.fillRect(17,35,14,9);
+  g.fillStyle='#111';g.font='bold 8px sans-serif';g.textAlign='center';g.fillText(num,24,42.5);
+  g.fillStyle='#e6b48c';g.beginPath();g.arc(24,22,7.5,0,7);g.fill();
+  g.fillStyle='#16130f';g.beginPath();g.arc(24,20,7.8,Math.PI,0);g.fill();
+  g.fillStyle='#111';g.fillRect(16.5,23,4,1.5);g.fillRect(27.5,23,4,1.5);
+  g.fillStyle='#e6b48c';g.fillRect(20,45,9,6);
+  g.fillStyle='#1e2228';g.fillRect(21,43,7,6);g.fillStyle='#000';g.fillRect(23,44.5,3,3);
+  if(v===1){g.fillStyle='#ffd75e';g.beginPath();g.arc(24.5,46,7,0,7);g.fill();g.fillStyle='#fff';g.beginPath();g.arc(24.5,46,3,0,7);g.fill();}
+  if(v===2){g.globalCompositeOperation='source-atop';g.fillStyle='rgba(255,40,60,.55)';g.fillRect(0,0,48,80);}
+  return c;
+}
+
+/* ---------- maze ---------- */
+function genMaze(){
+  map=Array.from({length:N},()=>Array(N).fill(1));
+  const st=[[1,1]];map[1][1]=0;
+  while(st.length){
+    const [x,y]=st[st.length-1];
+    const nb=DIRS.map(([dx,dy])=>[x+dx*2,y+dy*2,x+dx,y+dy]).filter(([nx,ny])=>nx>0&&ny>0&&nx<N-1&&ny<N-1&&map[ny][nx]===1);
+    if(!nb.length){st.pop();continue;}
+    const [nx,ny,wx,wy]=nb[Math.random()*nb.length|0];
+    map[wy][wx]=0;map[ny][nx]=0;st.push([nx,ny]);
+  }
+  // knock out some walls so there are loops and flanking routes
+  for(let y=1;y<N-1;y++)for(let x=1;x<N-1;x++){
+    if(map[y][x]!==1||Math.random()>.12) continue;
+    const h=!map[y][x-1]&&!map[y][x+1]&&map[y-1][x]&&map[y+1][x];
+    const v=!map[y-1][x]&&!map[y+1][x]&&map[y][x-1]&&map[y][x+1];
+    if(h||v) map[y][x]=0;
+  }
+  EX=N-2;EY=N-2;map[EY][N-1]=2;map[N-1][EX]=2;
+  dist=map.map(r=>r.map(()=>Infinity));dist[EY][EX]=0;
+  const q=[[EX,EY]];
+  for(let i=0;i<q.length;i++){const [x,y]=q[i];
+    for(const [dx,dy] of DIRS){const nx=x+dx,ny=y+dy;
+      if(map[ny][nx]===0&&dist[ny][nx]===Infinity){dist[ny][nx]=dist[y][x]+1;q.push([nx,ny]);}}}
+  seen=map.map(r=>r.map(()=>0));
+}
+
+/* ---------- setup ---------- */
+function newGame(){
+  genMaze();
+  const east=map[1][2]===0;
+  P={x:1.5,y:1.5,dx:east?1:0,dy:east?0:1,px:east?0:-FOV,py:east?FOV:0,hp:100,ammo:6,reload:0,cd:0,fireT:0,bob:0,hurt:0};
+  const D0=dist[1][1], used=new Set(), pool=[];
+  for(let y=1;y<N-1;y+=2)for(let x=1;x<N-1;x+=2) if(Math.hypot(x-1,y-1)>8&&!lineClear(1.5,1.5,x+.5,y+.5)) pool.push([x,y]);
+  pool.sort(()=>Math.random()-.5);
+  E=[];
+  for(const lo of [.7,.5,.3]){
+    for(const [x,y] of pool){
+      if(E.length>=RIVALS) break;
+      const d=dist[y][x];
+      if(d<D0*lo||d>D0*1.1||used.has(x+','+y)||E.some(e=>Math.hypot(e.x-x,e.y-y)<3)) continue;
+      used.add(x+','+y);
+      const num=String(Math.floor(Math.random()*455)+1).padStart(3,'0');
+      E.push({x:x+.5,y:y+.5,num,hp:2,speed:.75+Math.random()*.3,t:null,seen:0,cd:0,fireT:0,hurtT:0,dead:false,
+        img:[0,1,2,3].map(v=>figure(num,v))});
+    }
+  }
+  elapsed=0;flash('Find the exit. Only one walks out.');
+}
+function rotate(a){
+  const c=Math.cos(a),s=Math.sin(a),{dx,dy,px,py}=P;
+  P.dx=dx*c-dy*s;P.dy=dx*s+dy*c;P.px=px*c-py*s;P.py=px*s+py*c;
+}
+function flash(t){$('msg').textContent=t;msgT=2.2;}
+
+/* ---------- audio ---------- */
+let ac,noise;
+function bang(vol){
+  try{
+    ac=ac||new AudioContext();
+    if(!noise){noise=ac.createBuffer(1,ac.sampleRate*.35|0,ac.sampleRate);const d=noise.getChannelData(0);
+      for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,4);}
+    const s=ac.createBufferSource(),f=ac.createBiquadFilter(),g=ac.createGain();
+    s.buffer=noise;f.type='lowpass';f.frequency.value=vol>.3?2600:900;g.gain.value=vol;
+    s.connect(f).connect(g).connect(ac.destination);s.start();
+  }catch(e){}
+}
+function click(){try{ac=ac||new AudioContext();const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=900;g.gain.value=.05;
+  g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+.05);o.connect(g).connect(ac.destination);o.start();o.stop(ac.currentTime+.06);}catch(e){}}
+
+/* ---------- gameplay ---------- */
+const solid=(x,y)=>map[y|0][x|0]!==0;
+function lineClear(ax,ay,bx,by){
+  const d=Math.hypot(bx-ax,by-ay),n=Math.ceil(d/.1);
+  for(let i=1;i<n;i++) if(solid(ax+(bx-ax)*i/n,ay+(by-ay)*i/n)) return false;
+  return true;
+}
+function project(e){
+  const inv=1/(P.px*P.dy-P.dx*P.py),sx=e.x-P.x,sy=e.y-P.y;
+  const tx=inv*(P.dy*sx-P.dx*sy),ty=inv*(-P.py*sx+P.px*sy);
+  return {ty,scx:(W/2)*(1+tx/ty),sh:H/ty};
+}
+function shoot(){
+  if(state!=='play'||P.cd>0||P.reload>0) return;
+  if(P.ammo<=0){click();startReload();return;}
+  P.ammo--;P.cd=.32;P.fireT=.08;bang(.5);
+  let best=null;
+  for(const e of E){
+    if(e.dead) continue;
+    const p=project(e);
+    if(p.ty<.15) continue;
+    if(Math.abs(p.scx-W/2)<p.sh*.6*.26&&p.ty<zbuf[W>>1]+.3&&(!best||p.ty<best.p.ty)) best={e,p};
+  }
+  if(best){
+    const e=best.e;e.hp--;e.hurtT=.15;e.seen=Math.max(e.seen,.7);
+    if(e.hp<=0){e.dead=true;flash(`Player ${e.num} eliminated`);}
+  }
+  if(P.ammo===0) startReload();
+}
+function startReload(){if(P.reload>0||P.ammo===6)return;P.reload=1.2;click();}
+
+function update(dt){
+  elapsed+=dt;
+  const k=keys, mv=(k.KeyW||k.ArrowUp||k.fwd?1:0)-(k.KeyS||k.ArrowDown||k.back?1:0), st=(k.KeyD?1:0)-(k.KeyA?1:0);
+  const turn=(k.ArrowRight||k.KeyE||k.turnR?1:0)-(k.ArrowLeft||k.KeyQ||k.turnL?1:0);
+  if(turn) rotate(turn*2.4*dt);
+  if(mv||st){
+    const pl=Math.hypot(P.px,P.py),sp=3*dt/(mv&&st?1.41:1);
+    const vx=(P.dx*mv+P.px/pl*st)*sp, vy=(P.dy*mv+P.py/pl*st)*sp, r=.22;
+    if(!solid(P.x+vx+Math.sign(vx)*r,P.y)) P.x+=vx;
+    if(!solid(P.x,P.y+vy+Math.sign(vy)*r)) P.y+=vy;
+    P.bob+=dt*11;
+  }
+  for(let y=Math.max(0,(P.y|0)-1);y<=Math.min(N-1,(P.y|0)+1);y++)for(let x=Math.max(0,(P.x|0)-1);x<=Math.min(N-1,(P.x|0)+1);x++) seen[y][x]=1;
+  if(k.Space||k.fire) shoot();
+  P.cd-=dt;P.fireT-=dt;P.hurt=Math.max(0,P.hurt-dt);
+  if(P.reload>0){P.reload-=dt;if(P.reload<=0){P.reload=0;P.ammo=6;}}
+  if((P.x|0)===EX&&(P.y|0)===EY) return end(true);
+
+  for(const e of E){
+    if(e.dead) continue;
+    e.hurtT-=dt;e.fireT-=dt;
+    const d=Math.hypot(P.x-e.x,P.y-e.y);
+    if(d<9&&lineClear(e.x,e.y,P.x,P.y)){
+      e.seen+=dt;
+      if(e.seen>.7){
+        e.cd-=dt;
+        if(e.cd<=0){
+          e.cd=1+Math.random()*.8;e.fireT=.12;bang(Math.max(.06,.4-d*.035));
+          if(Math.random()<Math.max(.2,.72-d*.06)){P.hp-=10+Math.random()*7|0;P.hurt=.5;}
+          if(P.hp<=0){P.hp=0;return end(false,`Player ${e.num} shot you.`);}
+        }
+      }
+      continue; // stands still while in a firefight
+    }
+    e.seen=Math.max(0,e.seen-dt*.5);
+    if(!e.t){
+      const cx=e.x|0,cy=e.y|0;
+      if(cx===EX&&cy===EY) return end(false,`Player ${e.num} reached the exit first.`);
+      const opts=DIRS.map(([dx,dy])=>[cx+dx,cy+dy]).filter(([x,y])=>map[y][x]===0&&dist[y][x]<dist[cy][cx]);
+      const o=opts[Math.random()*opts.length|0];
+      e.t={x:o[0]+.5,y:o[1]+.5};
+    }
+    const vx=e.t.x-e.x,vy=e.t.y-e.y,dd=Math.hypot(vx,vy),s=e.speed*dt;
+    if(dd<=s){e.x=e.t.x;e.y=e.t.y;e.t=null;}else{e.x+=vx/dd*s;e.y+=vy/dd*s;}
+  }
+}
+
+function end(win,why){
+  state='over';
+  try{document.exitPointerLock?.();}catch(e){}
+  const kills=E.filter(e=>e.dead).length, t=fmt(elapsed);
+  $('ovTitle').textContent=win?'Player 456 walks out':'Eliminated';
+  $('ovText').textContent=win
+    ?`You reached the exit in ${t} with ${P.hp} health left. You took down ${kills} of ${E.length} rivals. Everyone still inside stays inside.`
+    :`${why} You lasted ${t} and took down ${kills} of ${E.length} rivals.`;
+  $('start').textContent='Play again';
+  $('ov').hidden=false;
+}
+const fmt=s=>Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');
+
+/* ---------- rendering ---------- */
+function fit(){
+  const r=cv.getBoundingClientRect();
+  H=240;W=Math.max(200,Math.min(520,Math.round(H*r.width/Math.max(1,r.height))));
+  cv.width=W;cv.height=H;zbuf=new Float32Array(W);ctx.imageSmoothingEnabled=false;
+}
+addEventListener('resize',fit);
+
+function render(){
+  let g=ctx.createLinearGradient(0,0,0,H/2);g.addColorStop(0,'#1a1f2b');g.addColorStop(1,'#07090d');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H/2);
+  g=ctx.createLinearGradient(0,H/2,0,H);g.addColorStop(0,'#07090d');g.addColorStop(1,'#3a2b33');
+  ctx.fillStyle=g;ctx.fillRect(0,H/2,W,H/2);
+
+  for(let x=0;x<W;x++){
+    const cam=2*x/W-1,rdx=P.dx+P.px*cam,rdy=P.dy+P.py*cam;
+    let mx=P.x|0,my=P.y|0;
+    const ddx=Math.abs(1/rdx),ddy=Math.abs(1/rdy);
+    let sx,sy,sdx,sdy,side=0,hit=0;
+    if(rdx<0){sx=-1;sdx=(P.x-mx)*ddx;}else{sx=1;sdx=(mx+1-P.x)*ddx;}
+    if(rdy<0){sy=-1;sdy=(P.y-my)*ddy;}else{sy=1;sdy=(my+1-P.y)*ddy;}
+    while(!hit){if(sdx<sdy){sdx+=ddx;mx+=sx;side=0;}else{sdy+=ddy;my+=sy;side=1;}hit=map[my][mx];}
+    seen[my][mx]=1;
+    const pd=side?sdy-ddy:sdx-ddx;
+    let wx=side?P.x+pd*rdx:P.y+pd*rdy;wx-=Math.floor(wx);
+    let tx=wx*64|0;if(!side&&rdx>0)tx=63-tx;if(side&&rdy<0)tx=63-tx;
+    const lh=H/pd,top=(H-lh)/2;
+    ctx.globalAlpha=1;ctx.drawImage(texFor(mx,my,hit),tx,0,1,64,x,top,1,lh);
+    ctx.globalAlpha=Math.min(.92,((side?.22:0)+pd/15)*(hit===2?.35:1));
+    ctx.fillStyle='#07090d';ctx.fillRect(x,top,1,lh);
+    zbuf[x]=pd;
+  }
+  ctx.globalAlpha=1;
+
+  const list=E.map(e=>({e,p:project(e)})).filter(o=>o.p.ty>.15).sort((a,b)=>b.p.ty-a.p.ty);
+  for(const {e,p} of list){
+    const sw=p.sh*.6,left=p.scx-sw/2,top=(H-p.sh)/2;
+    const img=e.img[e.dead?3:e.hurtT>0?2:e.fireT>0?1:0];
+    ctx.globalAlpha=Math.max(.15,1-p.ty/16);
+    for(let c=Math.max(0,Math.floor(left));c<Math.min(W,left+sw);c++){
+      if(p.ty>=zbuf[c]) continue;
+      ctx.drawImage(img,Math.min(47,((c-left)/sw*48)|0),0,1,80,c,top,1,p.sh);
+    }
+  }
+  ctx.globalAlpha=1;
+
+  // weapon
+  const b=Math.sin(P.bob)*3,rec=P.fireT>0?7:0,rl=P.reload>0?Math.sin(P.reload/1.2*Math.PI)*40:0;
+  const cx=W/2+22,by=H+Math.abs(b)+rec+rl;
+  if(P.fireT>0){ctx.fillStyle='#ffd75e';ctx.beginPath();ctx.arc(cx,by-74,13,0,7);ctx.fill();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(cx,by-74,6,0,7);ctx.fill();}
+  ctx.fillStyle='#d9a47c';ctx.fillRect(cx-12,by-34,24,34);
+  ctx.fillStyle='#2b2f36';ctx.fillRect(cx-7,by-64,14,36);
+  ctx.fillStyle='#454c57';ctx.fillRect(cx-7,by-64,14,5);ctx.fillRect(cx-1,by-68,2,4);
+  ctx.fillStyle='#c4916b';ctx.fillRect(cx-12,by-30,24,4);
+
+  // crosshair
+  ctx.fillStyle='#ff2d7a';ctx.fillRect(W/2-4,H/2,3,1);ctx.fillRect(W/2+2,H/2,3,1);ctx.fillRect(W/2,H/2-4,1,3);ctx.fillRect(W/2,H/2+2,1,3);
+
+  // minimap of explored tiles
+  const s=Math.max(2,Math.floor(H/90)),ox=W-N*s-6,oy=6;
+  ctx.fillStyle='rgba(7,9,13,.7)';ctx.fillRect(ox-2,oy-2,N*s+4,N*s+4);
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    if(!seen[y][x]) continue;
+    ctx.fillStyle=map[y][x]===2?'#1fd3b4':map[y][x]?'#ef8fb0':'#2a3340';ctx.fillRect(ox+x*s,oy+y*s,s,s);
+  }
+  ctx.fillStyle='#1fd3b4';ctx.fillRect(ox+EX*s,oy+EY*s,s,s);
+  ctx.fillStyle='#fff';ctx.fillRect(ox+P.x*s-1,oy+P.y*s-1,2,2);
+  ctx.fillRect(ox+(P.x+P.dx*1.2)*s,oy+(P.y+P.dy*1.2)*s,1,1);
+
+  if(P.hurt>0){ctx.fillStyle=`rgba(200,0,30,${P.hurt*.6})`;ctx.fillRect(0,0,W,H);}
+}
+
+function hud(){
+  $('hp').textContent=Math.max(0,P.hp);$('hp').classList.toggle('warn',P.hp<=35);
+  $('ammo').textContent=P.reload>0?'reload':P.ammo+'/6';
+  const alive=E.filter(e=>!e.dead);
+  $('riv').textContent=alive.length;
+  const lead=alive.length?Math.min(...alive.map(e=>dist[e.y|0][e.x|0])):null;
+  $('lead').textContent=lead===null?'–':lead+'m';$('lead').classList.toggle('warn',lead!==null&&lead<12);
+  $('time').textContent=fmt(elapsed);
+}
+
+let last=performance.now();
+function loop(now){
+  const dt=Math.min(.05,(now-last)/1000);last=now;
+  if(state==='play') update(dt);
+  else rotate(dt*.15);
+  render();hud();
+  if(msgT>0){msgT-=dt;if(msgT<=0)$('msg').textContent='';}
+  requestAnimationFrame(loop);
+}
+
+/* ---------- input ---------- */
+const GAME_KEYS=['KeyW','KeyA','KeyS','KeyD','KeyQ','KeyE','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'];
+addEventListener('keydown',e=>{
+  if(GAME_KEYS.includes(e.code)&&state==='play'){keys[e.code]=true;e.preventDefault();}
+  if(e.code==='KeyR'&&state==='play') startReload();
+});
+addEventListener('keyup',e=>{keys[e.code]=false;});
+addEventListener('blur',()=>{keys={};});
+let dragging=false;
+cv.addEventListener('mousedown',e=>{
+  if(state!=='play') return;
+  if(document.pointerLockElement!==cv){try{const r=cv.requestPointerLock();r&&r.catch&&r.catch(()=>{});}catch(err){}}
+  dragging=true;shoot();
+});
+addEventListener('mouseup',()=>{dragging=false;});
+addEventListener('mousemove',e=>{
+  if(state!=='play') return;
+  if(document.pointerLockElement===cv||dragging) rotate(e.movementX*.0025);
+});
+document.querySelectorAll('.touch button').forEach(b=>{
+  const k=b.dataset.k,on=e=>{e.preventDefault();keys[k]=true;},off=()=>{keys[k]=false;};
+  b.addEventListener('pointerdown',on);['pointerup','pointerleave','pointercancel'].forEach(t=>b.addEventListener(t,off));
+});
+$('start').onclick=()=>{newGame();keys={};state='play';$('ov').hidden=true;bang(.01);};
+
+fit();newGame();$('msg').textContent='';requestAnimationFrame(loop);
+</script>
