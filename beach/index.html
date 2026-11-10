@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trojan Beach Report</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <h1>🌊 Trojan Beach Report</h1>
+  <p class="sub">Live beach-day scores for the beaches closest to USC, ranked best to worst.</p>
+  <div class="bar">
+    <span id="status">Loading…</span>
+    <span class="toggle">Rank by <button type="button" data-mode="beach" class="on">Beach day</button><button type="button" data-mode="surf">Surf</button></span>
+    <button id="refresh" type="button">Refresh</button>
+  </div>
+</header>
+
+<section id="tide" class="tide" hidden></section>
+<main id="cards" aria-live="polite"></main>
+
+<section class="how">
+  <h2>How the score works</h2>
+  <p>Each beach gets a 0–100 score from the hourly forecast, averaged over beach hours (10am–5pm, remaining hours if it's already afternoon).</p>
+  <ul>
+    <li><b>Air temp 20%</b> – best 76–88°F</li>
+    <li><b>Water temp 15%</b> – 70°F+ is comfy, below 60°F is brutal</li>
+    <li><b>Waves 15%</b> – calm to small (≤3 ft) is best for swimming</li>
+    <li><b>Wind 15%</b> – under 8 mph is best</li>
+    <li><b>Sky 15%</b> – sun and low rain chance</li>
+    <li><b>UV 10%</b> – very high UV lowers the score a bit and triggers a sunscreen warning</li>
+    <li><b>Air quality 10%</b> – US AQI</li>
+  </ul>
+  <p><b>Surf score</b> (shown on every card): swell height 40% (4–6 ft is ideal; a rough 0.3–0.5× factor for breakwater-sheltered Long Beach and Cabrillo), swell period 25% (12s+ is best), and wind 35% (offshore or light is glassy; onshore wind hurts). Wind direction is judged against which way each beach faces. Tide isn't factored in.</p>
+  <p class="fine">Data: Open-Meteo (weather, marine model, air quality/UV) and NOAA CO-OPS (tides, LA Outer Harbor). Drive times from USC are rough estimates. Wave/water data is a model, not a lifeguard report — always check posted flags and rip-current warnings.</p>
+</section>
+<script src="app.js"></script>
+</body>
+</html>
